@@ -1,10 +1,8 @@
-# Hand Signs Recognition with PyTorch
+# Deep Learning in Ophthalmology
 
-*Authors: Surag Nair, Olivier Moindrot and Guillaume Genthial*
+*Authors: Lijing Song, Bozhao Liu*
 
 Take the time to read the [tutorials](https://cs230-stanford.github.io/project-starter-code.html).
-
-Note: all scripts must be run in folder `pytorch/vision`.
 
 ## Requirements
 
@@ -20,42 +18,43 @@ When you're done working on the project, deactivate the virtual environment with
 
 ## Task
 
-Given an image of a hand doing a sign representing 0, 1, 2, 3, 4 or 5, predict the correct label.
+Given an image of a eye fundus representing healthy, diabetic ophthalmical disease, and/or glaucoma, predict the correct label.
 
 
-## Download the SIGNS dataset
+## Our dataset
 
-For the vision example, we will used the SIGNS dataset created for this class. The dataset is hosted on google drive, download it [here][SIGNS].
+The dataset is collected by ourselves and hosted on box, download it [here][GlaucomaVSDiabetes].
 
-This will download the SIGNS dataset (~1.1 GB) containing photos of hands signs making numbers between 0 and 5.
+This will download the GlaucomaVSDiabetes dataset (~793 MB) containing photos of fundus images.
+
 Here is the structure of the data:
 ```
-SIGNS/
-    train_signs/
-        0_IMG_5864.jpg
+GlaucomaVSDiabetes/
+    diabetes/
+        GlaucomaVSDiabetes_1_0 (1).jpg
+        GlaucomaVSDiabetes_1_0 (2).jpg
         ...
-    test_signs/
-        0_IMG_5942.jpg
+    glaucoma/
+        GlaucomaVSDiabetes_0_1 (1).jpg
+        GlaucomaVSDiabetes_0_1 (2).jpg
         ...
 ```
 
-The images are named following `{label}_IMG_{id}.jpg` where the label is in `[0, 5]`.
-The training set contains 1,080 images and the test set contains 120 images.
+The images are named following `GlaucomaVSDiabetes_{label} ({id}).jpg` where the label is in `[0,0], [0,1], [1,0], [1,1]`.
+The diabetes set contains 598 images and the glaucoma set contains 339 images.
 
-Once the download is complete, move the dataset into `data/SIGNS`.
-Run the script `build_dataset.py` which will resize the images to size `(64, 64)`. The new resized dataset will be located by default in `data/64x64_SIGNS`:
+Once the download is complete, move the dataset into `data/GlaucomaVSDiabetes`.
+Run the script `build_dataset.py` which will resize the images to size `(192, 128)`. The new resized dataset will be located by default in `data/SplitData`:
 
 ```bash
-python build_dataset.py --data_dir data/SIGNS --output_dir data/64x64_SIGNS
+python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/SplitData
 ```
-
-
 
 ## Quickstart (~10 min)
 
-1. __Build the dataset of size 64x64__: make sure you complete this step before training
+1. __Build the dataset of size 192x128__: make sure you complete this step before training
 ```bash
-python build_dataset.py --data_dir data/SIGNS --output_dir data/64x64_SIGNS
+python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/SplitData
 ```
 
 2. __Your first experiment__ We created a `base_model` directory for you under the `experiments` directory. It contains a file `params.json` which sets the hyperparameters for the experiment. It looks like
