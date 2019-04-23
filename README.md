@@ -1,12 +1,12 @@
 # Deep Learning in Ophthalmology
 
-*Authors: Lijing Song, Bozhao Liu*
+*Authors: Lijing Song, Bozhao Liu, Stanford CS230 teaching staff*
 
-Take the time to read the [tutorials](https://cs230-stanford.github.io/project-starter-code.html).
+This is our Stanford CS230 final project developed on top of the [sample code in PyTorch](https://github.com/cs230-stanford/cs230-code-examples) given by the teaching staff.
 
 ## Requirements
 
-We recommend using python3 and a virtual env. See instructions [here](https://cs230-stanford.github.io/project-starter-code.html).
+We use python3, PyTorch, and a virtual env.
 
 ```
 virtualenv -p python3 .env
@@ -14,12 +14,11 @@ source .env/bin/activate
 pip install -r requirements.txt
 ```
 
-When you're done working on the project, deactivate the virtual environment with `deactivate`.
+When done working on the project, deactivate the virtual environment with `deactivate`.
 
 ## Task
 
 Given an image of a eye fundus representing healthy, diabetic ophthalmical disease, and/or glaucoma, predict the correct label.
-
 
 ## Our dataset
 
@@ -57,7 +56,7 @@ python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/Spl
 python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/SplitData
 ```
 
-2. __Your first experiment__ We created a `base_model` directory for you under the `experiments` directory. It contains a file `params.json` which sets the hyperparameters for the experiment. It looks like
+2. __First experiment__ We created a `base_model` directory under the `experiments` directory. It contains a file `params.json` which sets the hyperparameters for the experiment. It looks like
 ```json
 {
     "learning_rate": 1e-3,
@@ -66,15 +65,15 @@ python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/Spl
     ...
 }
 ```
-For every new experiment, you will need to create a new directory under `experiments` with a similar `params.json` file.
+For every new experiment, we create a new directory under `experiments` with a similar `params.json` file.
 
-3. __Train__ your experiment. Simply run
+3. __Train__ experiment. Simply run
 ```
-python train.py --data_dir data/64x64_SIGNS --model_dir experiments/base_model
+python train.py --data_dir data/SplitData --model_dir experiments/base_model
 ```
 It will instantiate a model and train it on the training set following the hyperparameters specified in `params.json`. It will also evaluate some metrics on the validation set.
 
-4. __Your first hyperparameters search__ We created a new directory `learning_rate` in `experiments` for you. Now, run
+4. __Hyperparameters search__ There is a new directory `learning_rate` in `experiments`. Now, run
 ```
 python search_hyperparams.py --data_dir data/64x64_SIGNS --parent_dir experiments/learning_rate
 ```
@@ -117,4 +116,4 @@ Once you get something working for your dataset, feel free to edit any part of t
 - [Tutorials](http://pytorch.org/tutorials/)
 - [PyTorch warm-up](https://github.com/jcjohnson/pytorch-examples)
 
-[SIGNS]: https://drive.google.com/file/d/1ufiR6hUKhXoAyiBNsySPkUwlvE_wfEHC/view?usp=sharing
+[GlaucomaVSDiabetes]: https://stanford.box.com/s/36h81ro7i87zxcafqbbphxksc1pdduj3
