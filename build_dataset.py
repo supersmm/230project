@@ -34,7 +34,8 @@ def resize_and_save(filename, output_dir, size1=SIZE1, size2=SIZE2):
     image = Image.open(filename)
     # Use bilinear interpolation instead of the default "nearest neighbor" method
     image = image.resize((size1, size2), Image.BILINEAR)
-    image.save(os.path.join(output_dir, filename.split('\\')[-1])) # split('/') if using Mac OS
+    filename_base=os.path.basename(filename)
+    image.save(os.path.join(output_dir, filename_base.split('\\')[-1])) # split('/') if using Mac OS
 
 
 if __name__ == '__main__':
@@ -48,7 +49,7 @@ if __name__ == '__main__':
 
         # Get the filenames in each directory (train and test)
         filenames = os.listdir(data_directory)
-        filenames = [os.path.join(data_directory, f) for f in filenames if f.endswith('.jpg')]
+        filenames = [os.path.join(data_directory, f) for f in filenames if f.endswith('.jpg') or f.endswith('.tif')]
 
         # Split the images into 80% train, 10% val, 10% test.
         # Make sure to always shuffle with a fixed seed so that the split is reproducible
