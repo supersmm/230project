@@ -9,17 +9,17 @@ import torchvision.transforms as transforms
 # and http://pytorch.org/tutorials/beginner/data_loading_tutorial.html
 # define a training image loader that specifies transforms on images. See documentation for more details.
 train_transformer = transforms.Compose([
-    transforms.Resize(64),  # resize the image to 64x64 (remove if images are already 64x64)
     transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
+    transforms.RandomVerticalFlip(),  # randomly flip image vertically
     transforms.ToTensor()])  # transform it into a torch tensor
 
 # loader for evaluation, no horizontal flip
 eval_transformer = transforms.Compose([
-    transforms.Resize(64),  # resize the image to 64x64 (remove if images are already 64x64)
+#    transforms.Resize(128),  # resize the image to 64x64 (remove if images are already 64x64)
     transforms.ToTensor()])  # transform it into a torch tensor
 
 
-class SIGNSDataset(Dataset):
+class FundusDataset(Dataset):
     """
     A standard PyTorch definition of Dataset which defines the functions __len__ and __getitem__.
     """
@@ -73,15 +73,15 @@ def fetch_dataloader(types, data_dir, params):
 
     for split in ['train', 'val', 'test']:
         if split in types:
-            path = os.path.join(data_dir, "{}_signs".format(split))
+            path = os.path.join(data_dir, "{}_data".format(split))
 
             # use the train_transformer if training data, else use eval_transformer without random flip
             if split == 'train':
-                dl = DataLoader(SIGNSDataset(path, train_transformer), batch_size=params.batch_size, shuffle=True,
+                dl = DataLoader(FundusDataset(path, train_transformer), batch_size=params.batch_size, shuffle=True,
                                         num_workers=params.num_workers,
                                         pin_memory=params.cuda)
             else:
-                dl = DataLoader(SIGNSDataset(path, eval_transformer), batch_size=params.batch_size, shuffle=False,
+                dl = DataLoader(FundusDataset(path, eval_transformer), batch_size=params.batch_size, shuffle=False,
                                 num_workers=params.num_workers,
                                 pin_memory=params.cuda)
 
