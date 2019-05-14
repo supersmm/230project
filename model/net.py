@@ -47,7 +47,7 @@ class Net(nn.Module):
         # 2 fully connected layers to transform the output of the convolution layers to the final output
         self.fc1 = nn.Linear(8*8*self.num_channels*4, self.num_channels*4)
         self.fcbn1 = nn.BatchNorm1d(self.num_channels*4)
-        self.fc2 = nn.Linear(self.num_channels*4, 6)       
+        self.fc2 = nn.Linear(self.num_channels*4, 1)       
         self.dropout_rate = params.dropout_rate
 
     def forward(self, s):
@@ -62,17 +62,17 @@ class Net(nn.Module):
 
         Note: the dimensions after each step are provided
         """
-        #                                                  -> batch_size x 3 x 64 x 64
+        #                                                  -> batch_size x 3 x 177 x 128
         # we apply the convolution layers, followed by batch normalisation, maxpool and relu x 3
-        s = self.bn1(self.conv1(s))                         # batch_size x num_channels x 64 x 64
-        s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels x 32 x 32
-        s = self.bn2(self.conv2(s))                         # batch_size x num_channels*2 x 32 x 32
-        s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*2 x 16 x 16
-        s = self.bn3(self.conv3(s))                         # batch_size x num_channels*4 x 16 x 16
-        s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*4 x 8 x 8
+        s = self.bn1(self.conv1(s))                         # batch_size x num_channels x 177 x 128
+        s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels x 88 x 64
+        s = self.bn2(self.conv2(s))                         # batch_size x num_channels*2 x 88 x 64
+        s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*2 x 44 x 32
+        s = self.bn3(self.conv3(s))                         # batch_size x num_channels*4 x 44 x 32
+        s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*4 x 22 x 16
 
         # flatten the output for each image
-        s = s.view(-1, 8*8*self.num_channels*4)             # batch_size x 8*8*num_channels*4
+        s = s.view(-1, 22*16*self.num_channels*4)             # batch_size x 8*8*num_channels*4
 
         # apply 2 fully connected layers with dropout
         s = F.dropout(F.relu(self.fcbn1(self.fc1(s))), 
@@ -99,6 +99,7 @@ def loss_fn(outputs, labels):
           demonstrates how you can easily define a custom loss function.
     """
     num_examples = outputs.size()[0]
+    #return nn.CrossEntropyLoss(outputs, labels)/num_examples
     return -torch.sum(outputs[range(num_examples), labels])/num_examples
 
 
