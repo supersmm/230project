@@ -81,7 +81,7 @@ class Net(nn.Module):
 
         # apply log softmax on each image's output (this is recommended over applying softmax
         # since it is numerically more stable)
-        return F.log_softmax(s, dim=1)
+        return F.sigmoid(s) # return F.log_softmax(s, dim=1)
 
 
 def loss_fn(outputs, labels):
@@ -99,9 +99,9 @@ def loss_fn(outputs, labels):
           demonstrates how you can easily define a custom loss function.
     """
     num_examples = outputs.size()[0]
-    #return nn.CrossEntropyLoss(outputs, labels)/num_examples
-    return -torch.sum(outputs[range(num_examples), labels])/num_examples
-
+    loss = nn.CrossEntropyLoss()
+    return loss(outputs.view(num_examples, -1).squeeze(), labels)/num_examples
+    #return -torch.sum(outputs[range(num_examples), labels])/num_examples
 
 def accuracy(outputs, labels):
     """
