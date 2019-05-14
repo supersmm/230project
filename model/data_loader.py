@@ -34,7 +34,17 @@ class FundusDataset(Dataset):
         self.filenames = os.listdir(data_dir)
         self.filenames = [os.path.join(data_dir, f) for f in self.filenames if f.endswith('.jpg')]
 
-        self.labels = [int(os.path.split(filename)[-1][0]) for filename in self.filenames]
+        # self.labels = [int(os.path.split(filename)[-1][0]) for filename in self.filenames]
+        self.labels = []
+        for filename in self.filenames:
+            imagename = os.path.split(filename)[-1]
+            ind = imagename.find('(')
+            label = imagename[(ind+1):(ind+3)]
+            if label == '10':
+                finallabel = int(1)
+            else:
+                finallabel = int(0)
+            self.labels.append(finallabel)
         self.transform = transform
 
     def __len__(self):
