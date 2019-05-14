@@ -47,7 +47,7 @@ class Net(nn.Module):
         # 2 fully connected layers to transform the output of the convolution layers to the final output
         self.fc1 = nn.Linear(22*16*self.num_channels*4, self.num_channels*4)
         self.fcbn1 = nn.BatchNorm1d(self.num_channels*4)
-        self.fc2 = nn.Linear(self.num_channels*4, 1)       
+        self.fc2 = nn.Linear(self.num_channels*4, 2)       
         self.dropout_rate = params.dropout_rate
 
     def forward(self, s):
@@ -77,11 +77,11 @@ class Net(nn.Module):
         # apply 2 fully connected layers with dropout
         s = F.dropout(F.relu(self.fcbn1(self.fc1(s))), 
             p=self.dropout_rate, training=self.training)    # batch_size x self.num_channels*4
-        s = self.fc2(s)                                     # batch_size x 1
+        s = self.fc2(s)                                     # batch_size x 2
 
         # apply log softmax on each image's output (this is recommended over applying softmax
         # since it is numerically more stable)
-        return F.sigmoid(s) # return F.log_softmax(s, dim=1)
+        return F.log_softmax(s, dim=1) # return F.sigmoid(s)
 
 
 def loss_fn(outputs, labels):
