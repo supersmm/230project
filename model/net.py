@@ -45,7 +45,7 @@ class Net(nn.Module):
         self.bn3 = nn.BatchNorm2d(self.num_channels*4)
 
         # 2 fully connected layers to transform the output of the convolution layers to the final output
-        self.fc1 = nn.Linear(8*8*self.num_channels*4, self.num_channels*4)
+        self.fc1 = nn.Linear(22*16*self.num_channels*4, self.num_channels*4)
         self.fcbn1 = nn.BatchNorm1d(self.num_channels*4)
         self.fc2 = nn.Linear(self.num_channels*4, 1)       
         self.dropout_rate = params.dropout_rate
@@ -55,10 +55,10 @@ class Net(nn.Module):
         This function defines how we use the components of our network to operate on an input batch.
 
         Args:
-            s: (Variable) contains a batch of images, of dimension batch_size x 3 x 64 x 64 .
+            s: (Variable) contains a batch of images, of dimension batch_size x 3 x 177 x 128.
 
         Returns:
-            out: (Variable) dimension batch_size x 6 with the log probabilities for the labels of each image.
+            out: (Variable) dimension batch_size x 1 with the log probabilities for the labels of each image.
 
         Note: the dimensions after each step are provided
         """
@@ -72,12 +72,12 @@ class Net(nn.Module):
         s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*4 x 22 x 16
 
         # flatten the output for each image
-        s = s.view(-1, 22*16*self.num_channels*4)             # batch_size x 8*8*num_channels*4
+        s = s.view(-1, 22*16*self.num_channels*4)             # batch_size x 22*16*self.num_channels*4
 
         # apply 2 fully connected layers with dropout
         s = F.dropout(F.relu(self.fcbn1(self.fc1(s))), 
             p=self.dropout_rate, training=self.training)    # batch_size x self.num_channels*4
-        s = self.fc2(s)                                     # batch_size x 6
+        s = self.fc2(s)                                     # batch_size x 1
 
         # apply log softmax on each image's output (this is recommended over applying softmax
         # since it is numerically more stable)
