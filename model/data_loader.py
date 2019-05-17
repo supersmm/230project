@@ -11,6 +11,8 @@ import torchvision.transforms as transforms
 train_transformer = transforms.Compose([
     transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
     transforms.RandomVerticalFlip(),  # randomly flip image vertically
+    transforms.RandomRotation(180), # randomly rotate image by 180 degrees
+    transforms.Grayscale(num_output_channels=1), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
     transforms.ToTensor()])  # transform it into a torch tensor
 
 # loader for evaluation, no horizontal flip

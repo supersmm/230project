@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import functions
 
 class Net(nn.Module):
     """
@@ -120,5 +121,6 @@ def accuracy(outputs, labels):
 # maintain all metrics required in this dictionary- these are used in the training and evaluation loops
 metrics = {
     'accuracy': accuracy,
+    'ConfusionMatrix': functions.getConfusionMatrix(predicted, target, numClasses)
     # could add more metrics such as accuracy for each token type
 }
