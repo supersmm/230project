@@ -18,10 +18,12 @@ def train_transformer_list(params):
     return train_transformer
 
 # loader for evaluation, no horizontal flip
-eval_transformer = transforms.Compose([
-#    transforms.Resize(128),  # resize the image to 64x64 (remove if images are already 64x64)
-    transforms.ToTensor()])  # transform it into a torch tensor
-
+def eval_transformer_list(params):
+    eval_transformer = transforms.Compose([
+        transforms.Grayscale(num_output_channels=params.num_input_channels), 
+    #    transforms.Resize(128),  # resize the image to 64x64 (remove if images are already 64x64)
+        transforms.ToTensor()])  # transform it into a torch tensor
+    return eval_transformer
 
 class FundusDataset(Dataset):
     """
@@ -95,7 +97,7 @@ def fetch_dataloader(types, data_dir, params):
                                         num_workers=params.num_workers,
                                         pin_memory=params.cuda)
             else:
-                dl = DataLoader(FundusDataset(path, eval_transformer), batch_size=params.batch_size, shuffle=False,
+                dl = DataLoader(FundusDataset(path, eval_transformer_list(params)), batch_size=params.batch_size, shuffle=False,
                                 num_workers=params.num_workers,
                                 pin_memory=params.cuda)
 
