@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import functions
+import model.functions
 
 class Net(nn.Module):
     """
@@ -38,7 +38,7 @@ class Net(nn.Module):
         # each of the convolution layers below have the arguments (input_channels, output_channels, filter_size,
         # stride, padding). We also include batch normalisation layers that help stabilise training.
         # For more details on how to use these layers, check out the documentation.
-        self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(params.num_input_channels, self.num_channels, 3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(self.num_channels)
         self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*2, 3, stride=1, padding=1)
         self.bn2 = nn.BatchNorm2d(self.num_channels*2)
@@ -120,7 +120,7 @@ def accuracy(outputs, labels):
 
 # maintain all metrics required in this dictionary- these are used in the training and evaluation loops
 metrics = {
-    'accuracy': accuracy,
-    'ConfusionMatrix': functions.getConfusionMatrix(predicted, target, numClasses)
+    'accuracy': accuracy
+    # 'ConfusionMatrix': functions.getConfusionMatrix(predicted, target, numClasses)
     # could add more metrics such as accuracy for each token type
 }
