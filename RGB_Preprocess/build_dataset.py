@@ -30,9 +30,9 @@ from Get_Image_Ratio import get_smallest_Image_Ratio
 from Filter import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', default='data/GlaucomaVSDiabetes', help="Directory with the raw fundus dataset")
-parser.add_argument('--output_dir', default='data/ResizedData', help="Where to write the new data")
-parser.add_argument('--filter_dir', default='data/filter', help="Where to save and get the image filter")
+parser.add_argument('--data_dir', default='../data/GlaucomaVSDiabetes', help="Directory with the raw fundus dataset")
+parser.add_argument('--output_dir', default='../data/ResizedData', help="Where to write the new data")
+parser.add_argument('--filter_dir', default='../data/filter', help="Where to save and get the image filter")
 
 args = parser.parse_args()
 
@@ -41,7 +41,7 @@ args = parser.parse_args()
 def resize_images(filter_img, width= 177, height = 128):
 	
 	assert os.path.isdir(args.data_dir), "Couldn't find the dataset at {}".format(args.data_dir)
-	for disease in ['diabetes', 'glaucoma']:
+	for disease in ['diabetes', 'glaucoma','healthy']:
 		# Define the data directories
 		data_directory = os.path.join(args.data_dir, disease)
 

@@ -1,17 +1,18 @@
 import os
 
 from PIL import Image
+import numpy as np
 
 def Create_filter(filename, out_dir, filter_name, is_image_filter = True):
-	im = Image.open(filename) # Can be many different formats.
+	im = Image.open(filename).convert('LA') # Can be many different formats.
 	pix = im.load()
 	##repaint
 	for i in range(0, im.size[0]):
 		for j in range(0, im.size[1]):
-			if (pix[i,j][0] < 40) and (pix[i,j][1] < 40) and (pix[i,j][2] < 40):
-				pix[i,j] = (0, 0, 0)  # Set the RGBA Value of the image (tuple)
+			if (pix[i,j][0] < 40):
+				pix[i,j] = (0, 255)  # Set the RGBA Value of the image (tuple)
 			else:
-				pix[i,j] = (255, 255, 255)
+				pix[i,j] = (255, 255)
 	if is_image_filter:
 		#Crop
 		midHeight = im.size[1]>>1
@@ -19,17 +20,13 @@ def Create_filter(filename, out_dir, filter_name, is_image_filter = True):
 		for i in range(0, im.size[0]):
 			for j in range(midHeight-HRange, midHeight+HRange):
 				if pix[i,j][0] > 40:
-					if pix[i,j][1] > 40:
-						if pix[i,j][2] > 40:
-							right = i - 1
-							break	
+					right = i - 1
+					break	
 		for i in range(0, im.size[0]):
 			for j in range(midHeight-HRange, midHeight+HRange):
 				if pix[im.size[0]-i-1, j][0] > 40:
-					if pix[im.size[0]-i-1,j][1] > 40:
-						if pix[im.size[0]-i-1,j][2] > 40:
-							left = im.size[0] - i
-							break		
+					left = im.size[0] - i
+					break		
 		left, top, right, bottom = left, 0, right, im.size[1]
 	else:
 		left, top, right, bottom = 0, 0, im.size[0], im.size[1]
@@ -38,9 +35,8 @@ def Create_filter(filename, out_dir, filter_name, is_image_filter = True):
 	for i in range(0, image.size[0]):
 		for j in range(0, image.size[1]):
 			p0 = pix[i,j][0] & pix[image.size[0]-i-1,j][0] & pix[i,image.size[1]-j-1][0]
-			p1 = pix[i,j][1] & pix[image.size[0]-i-1,j][1] & pix[i,image.size[1]-j-1][1]
-			p2 = pix[i,j][2] & pix[image.size[0]-i-1,j][2] & pix[i,image.size[1]-j-1][2]
-			pix[i,j] = (p0, p1, p2)
+			p1 = pix[i,j][1] | pix[image.size[0]-i-1,j][1] | pix[i,image.size[1]-j-1][1]
+			pix[i,j] = (p0, p1)
 	if not os.path.exists(out_dir):
 		os.mkdir(out_dir)
 	image.save(os.path.join(out_dir, filter_name.split('\\')[-1]))  # Save the modified pixels
@@ -51,12 +47,12 @@ def apply_image_filter(filter_img, im):
 	HRange = im.size[1]>>8
 	for i in range(0, im.size[0]):
 		for j in range(midHeight-HRange, midHeight+HRange):
-			if (pix[i,j][0] > 40) or (pix[i,j][1] > 40) or (pix[i,j][2] > 40):
+			if (pix[i,j][0] > 40):
 				right = i - 1
 				break	
 	for i in range(0, im.size[0]):
 		for j in range(midHeight-HRange, midHeight+HRange):
-			if (pix[im.size[0]-i-1, j][0] > 40) or (pix[im.size[0]-i-1,j][1] > 40) or (pix[im.size[0]-i-1,j][2]) > 40:
+			if (pix[im.size[0]-i-1, j][0] > 40):
 				left = im.size[0] - i
 				break			
 	#resize filter
@@ -73,21 +69,8 @@ def apply_image_filter(filter_img, im):
 	for i in range(0, image.size[0]):
 		for j in range(0, image.size[1]):
 			p0 = pix[i,j][0] & filter_pix[i,j][0]
-			p1 = pix[i,j][1] & filter_pix[i,j][1]
-			p2 = pix[i,j][2] & filter_pix[i,j][2]
-			pix[i,j] = (p0, p1, p2)
-	return image
-
-def apply_fundus_filter(filter_image, image):
-	filter_pix = filter_image.load()
-	pix = image.load()
-	#apply filter
-	for i in range(0, image.size[0]):
-		for j in range(0, image.size[1]):
-			p0 = pix[i,j][0] & filter_pix[i,j][0]
-			p1 = pix[i,j][1] & filter_pix[i,j][1]
-			p2 = pix[i,j][2] & filter_pix[i,j][2]
-			pix[i,j] = (p0, p1, p2)
+			p1 = pix[i,j][1] | filter_pix[i,j][1]
+			pix[i,j] = (p0, p1)
 	return image
 	
 
@@ -95,30 +78,34 @@ def resize_and_save(image, output_dir, disease="diabetes", index=0, width = 128,
 	# Use bilinear interpolation instead of the default "nearest neighbor" method
 
 	image = image.resize((width, height), Image.BILINEAR)
-	label = ""
+	label= ""
 	if disease == "diabetes":
-		label = "01"
+		label = "01" 
+	elif disease == "glaucoma":
+		label = "10" 
 	else:
-		label = "10"
-	rename = "GlaucomaVSDiabetes" + str(index) + "_(" + label + ")" + ".jpg"
+		label = "00"
+	rename = "GlaucomaVSDiabetes" + str(index) + "_(" + label + ")" + ".png"
+	image = prenorm(image)
 	image.save(os.path.join(output_dir, rename.split('\\')[-1])) # split('/') if using Mac OS
+
+def prenorm(im):
+	pix = im.load()
+	max_W = 0
+	for i in range(0, im.size[0]):
+		for j in range(0, im.size[1]):
+			if max_W < pix[i,j][0]: 
+				max_W = pix[i,j][0]
+	for i in range(0, im.size[0]):
+		for j in range(0, im.size[1]):
+			p = int(pix[i,j][0]/max_W*255)
+			pix[i,j] = (p, pix[i,j][1])
+	return im
 	
+if __name__ == '__main__':
 
-#Create_filter("data/GlaucomaVSDiabetes/glaucoma/GlaucomaVSDiabetes_1_0 (1).tif",'data/GlaucomaVSDiabetes/filter')
-'''im = Image.open("data/GlaucomaVSDiabetes/glaucoma/GlaucomaVSDiabetes_1_0 (1).tif")
-filter_img = Image.open('data/filter/filter.jpg')
-print(filter_img.size)
-image = apply_image_filter(filter_img, im)
-print(filter_img.size)
-height = 128
-hpercent = float(height/float(filter_img.size[1]))
-width = int(float(filter_img.size[0])*float(hpercent))
-image = image.resize((width, height), Image.BILINEAR)
-image.save('img.jpg')'''
+	image_filter = Image.open('image_filter.png')
+	im = Image.open("grayscale.png")
+	im = apply_image_filter(image_filter, im)
+	im.save("filtered.png")
 
-
-'''Create_filter("data/ResizedData/train_data/GlaucomaVSDiabetes1_(01).jpg",'data/filter', 'fundus_filter.jpg', is_image_filter = False)
-filter_img = Image.open('data/filter/fundus_filter.jpg')
-im = Image.open("data/ResizedData/train_data/GlaucomaVSDiabetes1_(01).jpg")
-image = apply_fundus_filter(filter_img, im)
-image.save('mymy.jpg')'''
