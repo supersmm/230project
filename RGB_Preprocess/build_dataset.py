@@ -81,9 +81,12 @@ def resize_images(filter_img, width= 177, height = 128):
 			index = 1
 			for filename in tqdm(filenames[split]):
 				image = Image.open(filename)
-				image = apply_image_filter(filter_img, image)
-				resize_and_save(image, output_dir_split, disease, index, width = width, height = height)
-				index = index + 1
+				try:
+					image = apply_image_filter(filter_img, image)
+					resize_and_save(image, output_dir_split, disease, index, width = width, height = height)
+					index = index + 1
+				except NameError:
+					os.remove(filename) ##exception raise on image being too dark
 
 def round_up_images(filter_img):
 	

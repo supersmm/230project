@@ -105,7 +105,7 @@ def prenorm(im):
 if __name__ == '__main__':
 
 	image_filter = Image.open('image_filter.png')
-	im = Image.open("grayscale.png")
+	im = Image.open("../data/GlaucomaVSDiabetes/healthy/vk003334.jpg").convert('LA')
 	im = apply_image_filter(image_filter, im)
 	im.save("filtered.png")
 
