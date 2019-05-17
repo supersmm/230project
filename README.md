@@ -1,4 +1,4 @@
-# Deep Learning in Ophthalmology
+# Multi-task Deep Network for Ophthalmology Screening on Fundus Images
 
 *Authors: Lijing Song, Bozhao Liu, Stanford CS230 teaching staff*
 
@@ -6,7 +6,7 @@ This is our Stanford CS230 final project developed on top of the [sample code in
 
 ## Requirements
 
-We use python3, PyTorch, and a virtual env.
+We use python3, PyTorch (source activate pytorch_p36 on AWS EC2), and a virtual env.
 
 ```
 virtualenv -p python3 .env
@@ -22,9 +22,7 @@ Given an image of a eye fundus representing healthy, diabetic ophthalmical disea
 
 ## Our dataset
 
-The dataset is collected by ourselves and hosted on box, download it [here][GlaucomaVSDiabetes].
-
-This will download the GlaucomaVSDiabetes dataset (~793 MB) containing photos of fundus images.
+The dataset containing photos of fundus images is collected by ourselves from Rjukan Synssenter Optometri and hosted on box, download it [here][GlaucomaVSDiabetes].
 
 Here is the structure of the data:
 ```
@@ -37,26 +35,30 @@ GlaucomaVSDiabetes/
         GlaucomaVSDiabetes_0_1 (1).jpg
         GlaucomaVSDiabetes_0_1 (2).jpg
         ...
+    healthy/
+        GlaucomaVSDiabetes_0_0 (1).jpg
+        GlaucomaVSDiabetes_0_0 (2).jpg
+        ...
 ```
 
 The images are named following `GlaucomaVSDiabetes_{label} ({id}).jpg` where the label is in `[0,0], [0,1], [1,0], [1,1]`.
 The diabetes set contains 598 images and the glaucoma set contains 339 images.
 
 Once the download is complete, move the dataset into `data/GlaucomaVSDiabetes`.
-Run the script `build_dataset.py` which will resize the images to size `(192, 128)`. The new resized dataset will be located by default in `data/SplitData`:
+Run the script `build_dataset.py` which will resize the images to size `(177, 128)`. The new resized dataset will be located by default in `data/ResizedData`:
 
 ```bash
-python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/SplitData
+python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/ResizedData
 ```
 
 ## Quickstart (~10 min)
 
-1. __Build the dataset of size 192x128__: make sure you complete this step before training
+1. __Build the dataset of size 177x128__: make sure you complete this step before training
 ```bash
-python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/SplitData
+python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/ResizedData
 ```
 
-2. __First experiment__ We created a `base_model` directory under the `experiments` directory. It contains a file `params.json` which sets the hyperparameters for the experiment. It looks like
+2. __First experiment__ We started with a baseline model using a `base_model` directory under the `experiments` directory. It contains a file `params.json` which sets the hyperparameters for the experiment. It looks like
 ```json
 {
     "learning_rate": 1e-3,
@@ -65,17 +67,17 @@ python build_dataset.py --data_dir data/GlaucomaVSDiabetes --output_dir data/Spl
     ...
 }
 ```
-For every new experiment, we create a new directory under `experiments` with a similar `params.json` file.
+For every new experiment, we create a new directory under `experiments` with a similar `params.json` file, for instance, greyscale.
 
 3. __Train__ experiment. Simply run
 ```
-python train.py --data_dir data/SplitData --model_dir experiments/base_model
+python train.py --data_dir data/ResizedData --model_dir experiments/base_model
 ```
 It will instantiate a model and train it on the training set following the hyperparameters specified in `params.json`. It will also evaluate some metrics on the validation set.
 
 4. __Hyperparameters search__ There is a new directory `learning_rate` in `experiments`. Now, run
 ```
-python search_hyperparams.py --data_dir data/64x64_SIGNS --parent_dir experiments/learning_rate
+python search_hyperparams.py --data_dir data/ResizedData --parent_dir experiments/learning_rate
 ```
 It will train and evaluate a model with different values of learning rate defined in `search_hyperparams.py` and create a new directory for each experiment under `experiments/learning_rate/`.
 
@@ -86,7 +88,7 @@ python synthesize_results.py --parent_dir experiments/learning_rate
 
 6. __Evaluation on the test set__ Once you've run many experiments and selected your best model and hyperparameters based on the performance on the validation set, you can finally evaluate the performance of your model on the test set. Run
 ```
-python evaluate.py --data_dir data/64x64_SIGNS --model_dir experiments/base_model
+python evaluate.py --data_dir data/ResizedData --model_dir experiments/base_model
 ```
 
 

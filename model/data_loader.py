@@ -21,7 +21,7 @@ def train_transformer_list(params):
 def eval_transformer_list(params):
     eval_transformer = transforms.Compose([
         transforms.Grayscale(num_output_channels=params.num_input_channels), 
-    #    transforms.Resize(128),  # resize the image to 64x64 (remove if images are already 64x64)
+        # transforms.Resize([177, 128]),  # resize the image to 177x128 (remove if images are already 64x64)
         transforms.ToTensor()])  # transform it into a torch tensor
     return eval_transformer
 

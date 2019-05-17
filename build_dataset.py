@@ -1,4 +1,4 @@
-"""Split our Fundus dataset into train/val/test and resize images to (192, 128).
+"""Split our Fundus dataset into train/val/test and resize images to (177, 128).
 
 Our Fundus dataset comes into the following format:
     diabetes/
@@ -8,6 +8,10 @@ Our Fundus dataset comes into the following format:
     glaucoma/
         GlaucomaVSDiabetes_0_1 (1).jpg
         GlaucomaVSDiabetes_0_1 (2).jpg
+        ...
+    healthy/
+        GlaucomaVSDiabetes_0_0 (1).jpg
+        GlaucomaVSDiabetes_0_0 (2).jpg
         ...
 
 Original images have various sizes including (2743, 1936), (2376, 1584), etc.
