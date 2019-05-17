@@ -11,7 +11,7 @@ Our Fundus dataset comes into the following format:
         ...
 
 Original images have various sizes including (2743, 1936), (2376, 1584), etc.
-Resizing to (192, 128) reduces the dataset size from 3.3 MB to 6-60 KB, and loading smaller images
+Resizing to (177, 128) reduces the dataset size from 3.3 MB to 6-60 KB, and loading smaller images
 makes training faster.
 """
 
@@ -34,7 +34,7 @@ args = parser.parse_args()
 
 
 
-def resize_images(filter_img, width= 128, height = 128):
+def resize_images(filter_img, width= 177, height = 128):
 	
 	assert os.path.isdir(args.data_dir), "Couldn't find the dataset at {}".format(args.data_dir)
 	for disease in ['diabetes', 'glaucoma']:
