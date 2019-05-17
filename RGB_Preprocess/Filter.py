@@ -104,6 +104,27 @@ def resize_and_save(image, output_dir, disease="diabetes", index=0, width = 128,
 		label = "00"
 	rename = "GlaucomaVSDiabetes" + str(index) + "_(" + label + ")" + ".jpg"
 	image.save(os.path.join(output_dir, rename.split('\\')[-1])) # split('/') if using Mac OS
+
+def prenorm(im):
+	pix = im.load()
+	max_R = 0
+	max_G = 0
+	max_B = 0
+	for i in range(0, im.size[0]):
+		for j in range(0, im.size[1]):
+			if max_R < pix[i,j][0]: 
+				max_W = pix[i,j][0]
+			if max_G < pix[i,j][1]: 
+				max_W = pix[i,j][1]
+			if max_B < pix[i,j][2]: 
+				max_W = pix[i,j][2]
+	for i in range(0, im.size[0]):
+		for j in range(0, im.size[1]):
+			p0 = int(pix[i,j][0]/max_R*255)
+			p1 = int(pix[i,j][1]/max_G*255)
+			p2 = int(pix[i,j][2]/max_B*255)
+			pix[i,j] = (p0, p1, p2)
+	return im
 	
 
 #Create_filter("data/GlaucomaVSDiabetes/glaucoma/GlaucomaVSDiabetes_1_0 (1).tif",'data/GlaucomaVSDiabetes/filter')
