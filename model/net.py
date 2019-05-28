@@ -45,11 +45,14 @@ class Net(nn.Module):
         self.conv3 = nn.Conv2d(self.num_channels*2, self.num_channels*4, 3, stride=1, padding=1)
         self.bn3 = nn.BatchNorm2d(self.num_channels*4)
 
-        # 2 fully connected layers to transform the output of the convolution layers to the final output
+        # 2 fully connected layers to transform the output of the convolution layers
         self.fc1 = nn.Linear(22*16*self.num_channels*4, self.num_channels*4)
-        self.fcbn1 = nn.BatchNorm1d(self.num_channels*4)
-        self.fc2 = nn.Linear(self.num_channels*4, 2)       
+        self.fcbn1 = nn.BatchNorm1d(self.num_channels*4)    
         self.dropout_rate = params.dropout_rate
+
+        # 3 fully connected layers to transform the output of the convolution layers to the multi-task outputs
+        self.fc_glaucoma = nn.Linear(self.num_channels*4, 2)   
+        self.fc_diabetes = nn.Linear(self.num_channels*4, 2)   
 
     def forward(self, s):
         """
@@ -73,16 +76,17 @@ class Net(nn.Module):
         s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*4 x 22 x 16
 
         # flatten the output for each image
-        s = s.view(-1, 22*16*self.num_channels*4)             # batch_size x 22*16*self.num_channels*4
+        s = s.view(-1, 22*16*self.num_channels*4)           # batch_size x 22*16*self.num_channels*4
 
         # apply 2 fully connected layers with dropout
         s = F.dropout(F.relu(self.fcbn1(self.fc1(s))), 
             p=self.dropout_rate, training=self.training)    # batch_size x self.num_channels*4
-        s = self.fc2(s)                                     # batch_size x 2
+        s_glaucoma = self.fc_glaucoma(s)                    # batch_size x 2
+        s_diabetes = self.fc_diabetes(s)                    # batch_size x 2
 
         # apply log softmax on each image's output (this is recommended over applying softmax
         # since it is numerically more stable)
-        return F.log_softmax(s, dim=1) # return F.sigmoid(s)
+        return [F.log_softmax(s_glaucoma, dim=1), F.log_softmax(s_diabetes, dim=1)] # return F.sigmoid(s)
 
 
 def loss_fn(outputs, labels):
@@ -100,8 +104,13 @@ def loss_fn(outputs, labels):
           demonstrates how you can easily define a custom loss function.
     """
     num_examples = outputs.size()[0]
-    loss = nn.CrossEntropyLoss()
-    return loss(outputs.view(num_examples, -1).squeeze(), labels)/num_examples
+    criterion = nn.CrossEntropyLoss()
+    loss_glaucoma = criterion(outputs[0], labels[:, 0])
+    loss_diabetes = criterion(outputs[1], labels[:, 1])
+    loss = (loss_glaucoma+loss_diabetes)/num_examples
+    return loss
+    #loss = nn.CrossEntropyLoss()
+    #return loss(outputs.view(num_examples, -1).squeeze(), labels)/num_examples
     #return -torch.sum(outputs[range(num_examples), labels])/num_examples
 
 def accuracy(outputs, labels):
