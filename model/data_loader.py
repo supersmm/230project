@@ -13,7 +13,7 @@ def train_transformer_list(params):
         transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
         transforms.RandomVerticalFlip(),  # randomly flip image vertically
         transforms.RandomRotation(180), # randomly rotate image by 180 degrees
-        transforms.Grayscale(num_output_channels=params.num_input_channels), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
+        # transforms.Grayscale(num_output_channels=params.num_input_channels), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
         transforms.ToTensor()])  # transform it into a torch tensor
     return train_transformer
 
@@ -46,10 +46,7 @@ class FundusDataset(Dataset):
             imagename = os.path.split(filename)[-1]
             ind = imagename.find('(')
             label = imagename[(ind+1):(ind+3)]
-            if label == '10':
-                finallabel = int(1)
-            else:
-                finallabel = int(0)
+            finallabel = np.asarray([int(i) for i in label])
             self.labels.append(finallabel)
         self.transform = transform
 
