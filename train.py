@@ -63,20 +63,21 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             # performs updates using calculated gradients
             optimizer.step()
 
-            # Evaluate summaries only once in a while
-            if i % params.save_summary_steps == 0:
-                # extract data from torch Variable, move to cpu, convert to numpy arrays
-                output_batch = output_batch.data.cpu().numpy()
-                labels_batch = labels_batch.data.cpu().numpy()
+            for t in range(2):
+                # Evaluate summaries only once in a while
+                if i % params.save_summary_steps == 0:
+                    # extract data from torch Variable, move to cpu, convert to numpy arrays
+                    output_batch = output_batch[t].data.cpu().numpy()
+                    labels_batch = labels_batch[t].data.cpu().numpy()
 
-                # compute all metrics on this batch
-                summary_batch = {metric:metrics[metric](output_batch, labels_batch)
-                                 for metric in metrics}
-                summary_batch['loss'] = loss.data # summary_batch['loss'] = loss.data[0]
-                summ.append(summary_batch)
+                    # compute all metrics on this batch
+                    summary_batch = {metric:metrics[metric](output_batch, labels_batch)
+                                     for metric in metrics}
+                    summary_batch['loss'] = loss[t].data # summary_batch['loss'] = loss.data[0]
+                    summ.append(summary_batch)
 
             # update the average loss
-            loss_avg.update(loss.data) # loss_avg.update(loss.data[0])
+            loss_avg.update(loss[-1].data) # loss_avg.update(loss.data[0])
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()

@@ -105,10 +105,10 @@ def loss_fn(outputs, labels):
     """
     num_examples = outputs.size()[0]
     criterion = nn.CrossEntropyLoss()
-    loss_glaucoma = criterion(outputs[0], labels[:, 0])
-    loss_diabetes = criterion(outputs[1], labels[:, 1])
-    loss = (loss_glaucoma+loss_diabetes)/num_examples
-    return loss
+    loss_glaucoma = criterion(outputs[0], labels[:, 0])/num_examples
+    loss_diabetes = criterion(outputs[1], labels[:, 1])/num_examples
+    loss = (loss_glaucoma+loss_diabetes)
+    return [loss_glaucoma, loss_diabetes, loss]
     #loss = nn.CrossEntropyLoss()
     #return loss(outputs.view(num_examples, -1).squeeze(), labels)/num_examples
     #return -torch.sum(outputs[range(num_examples), labels])/num_examples
