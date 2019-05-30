@@ -50,15 +50,15 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         output_batch = model(data_batch)
         loss = loss_fn(output_batch, labels_batch)
 
-        for t in range(len(params.all_tasks)):
+        for task in range(len(params.all_tasks)):
             # extract data from torch Variable, move to cpu, convert to numpy arrays
-            output_batch = torch.as_tensor(output_batch[t]).data.cpu().numpy()
-            labels_batch = torch.as_tensor(labels_batch[:, t]).data.cpu().numpy()
+            output_task = torch.as_tensor(output_batch[task]).data.cpu().numpy()
+            labels_task = torch.as_tensor(labels_batch[:, task]).data.cpu().numpy()
 
             # compute all metrics on this batch
-            summary_batch = {metric: metrics[metric](output_batch, labels_batch)
+            summary_batch = {metric: metrics[metric](output_task, labels_task)
                              for metric in metrics}
-            summary_batch['loss'] = loss[t].data # summary_batch['loss'] = loss.data[0]
+            summary_batch['loss'] = loss[task].data # summary_batch['loss'] = loss.data[0]
             summ.append(summary_batch)
 
     # compute mean of all metrics in summary
