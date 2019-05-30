@@ -31,12 +31,12 @@ def get_image_ratio(filename, Ver_range = 8):##Ver_range 0-->10 the bigger Ver_r
 	Height = im.size[1]
 	return Width/Height
 
-def get_biggest_Image_Ratio(data_dir='data/GlaucomaVSDiabetes'):
+def get_biggest_Image_Ratio(data_dir='../data/GlaucomaVSDiabetes'):
 	ratio = 0
 	imagename = ""
 	assert os.path.isdir(data_dir), "Couldn't find the dataset at {}".format(data_dir)
 
-	for disease in ['diabetes', 'glaucoma']:
+	for disease in ['diabetes', 'glaucoma', 'healthy']:
 		# Define the data directories
 		data_directory = os.path.join(data_dir, disease)
 
@@ -76,7 +76,7 @@ def get_fundus_ratio(filename):##Ver_range 0-->10 the bigger Ver_range is the fa
 		Width = 100*im.size[0]
 	return Width/im.size[0]
 
-def get_smallest_Image_Ratio(data_dir = "data/ResizedData"):
+def get_smallest_Image_Ratio(data_dir = "../data/ResizedData"):
 	ratio = 100
 	imagename = ""
 	assert os.path.isdir(data_dir), "Couldn't find the dataset at {}".format(data_dir)
