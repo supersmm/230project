@@ -41,7 +41,7 @@ args = parser.parse_args()
 def resize_images(filter_img, width= 177, height = 128):
 	
 	assert os.path.isdir(args.data_dir), "Couldn't find the dataset at {}".format(args.data_dir)
-	for disease in ['diabetes', 'glaucoma']:
+	for disease in ['diabetes', 'glaucoma', 'healthy']:
 		# Define the data directories
 		data_directory = os.path.join(args.data_dir, disease)
 
@@ -56,8 +56,8 @@ def resize_images(filter_img, width= 177, height = 128):
 		random.shuffle(filenames)
 
 		num_images = len(filenames)
-		split1 = int(0.8 * num_images)
-		split2 = int(0.9 * num_images)
+		split1 = int((0.8 if disease == 'healthy' else 0.6) * num_images) 
+		split2 = int((0.9 if disease == 'healthy' else 0.8) * num_images)
 		train_filenames = filenames[:split1]
 		val_filenames = filenames[split1:split2]
 		test_filenames = filenames[split2:]

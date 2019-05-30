@@ -58,7 +58,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
 
             # clear previous gradients, compute gradients of all variables wrt loss
             optimizer.zero_grad()
-            loss.backward()
+            loss[-1].backward()
 
             # performs updates using calculated gradients
             optimizer.step()
