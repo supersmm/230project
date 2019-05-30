@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 
+import pdb
 import numpy as np
 import torch
 import torch.optim as optim
@@ -63,15 +64,15 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             # performs updates using calculated gradients
             optimizer.step()
 
-            for t in range(2):
+            for t in range(len(params.all_tasks)):
                 # Evaluate summaries only once in a while
                 if i % params.save_summary_steps == 0:
                     # extract data from torch Variable, move to cpu, convert to numpy arrays
                     output_batch = torch.as_tensor(output_batch[t]).data.cpu().numpy()
-                    labels_batch = torch.as_tensor(labels_batch[t]).data.cpu().numpy()
+                    labels_batch = torch.as_tensor(labels_batch[:, t]).data.cpu().numpy()
 
                     # compute all metrics on this batch
-                    summary_batch = {metric:metrics[metric](output_batch[t], labels_batch[t])
+                    summary_batch = {metric:metrics[metric](output_batch, labels_batch)
                                      for metric in metrics}
                     summary_batch['loss'] = loss[t].data # summary_batch['loss'] = loss.data[0]
                     summ.append(summary_batch)

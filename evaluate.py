@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 
+import pdb
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -49,13 +50,13 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         output_batch = model(data_batch)
         loss = loss_fn(output_batch, labels_batch)
 
-        for t in range(2):
+        for t in range(len(params.all_tasks)):
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             output_batch = torch.as_tensor(output_batch[t]).data.cpu().numpy()
-            labels_batch = torch.as_tensor(labels_batch[t]).data.cpu().numpy()
+            labels_batch = torch.as_tensor(labels_batch[:, t]).data.cpu().numpy()
 
             # compute all metrics on this batch
-            summary_batch = {metric: metrics[metric](output_batch[t], labels_batch[t])
+            summary_batch = {metric: metrics[metric](output_batch, labels_batch)
                              for metric in metrics}
             summary_batch['loss'] = loss[t].data # summary_batch['loss'] = loss.data[0]
             summ.append(summary_batch)
