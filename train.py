@@ -58,7 +58,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
 
             # clear previous gradients, compute gradients of all variables wrt loss
             optimizer.zero_grad()
-            loss.backward()
+            loss[-1].backward()
 
             # performs updates using calculated gradients
             optimizer.step()
@@ -71,7 +71,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
                     labels_batch = torch.as_tensor(labels_batch[t]).data.cpu().numpy()
 
                     # compute all metrics on this batch
-                    summary_batch = {metric:metrics[metric](output_batch, labels_batch)
+                    summary_batch = {metric:metrics[metric](output_batch[t], labels_batch[t])
                                      for metric in metrics}
                     summary_batch['loss'] = loss[t].data # summary_batch['loss'] = loss.data[0]
                     summ.append(summary_batch)

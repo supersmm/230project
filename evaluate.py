@@ -55,7 +55,7 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
             labels_batch = torch.as_tensor(labels_batch[t]).data.cpu().numpy()
 
             # compute all metrics on this batch
-            summary_batch = {metric: metrics[metric](output_batch, labels_batch)
+            summary_batch = {metric: metrics[metric](output_batch[t], labels_batch[t])
                              for metric in metrics}
             summary_batch['loss'] = loss[t].data # summary_batch['loss'] = loss.data[0]
             summ.append(summary_batch)
