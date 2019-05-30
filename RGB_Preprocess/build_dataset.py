@@ -30,9 +30,9 @@ from Get_Image_Ratio import get_smallest_Image_Ratio
 from Filter import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', default='data/GlaucomaVSDiabetes', help="Directory with the raw fundus dataset")
-parser.add_argument('--output_dir', default='data/ResizedData', help="Where to write the new data")
-parser.add_argument('--filter_dir', default='data/filter', help="Where to save and get the image filter")
+parser.add_argument('--data_dir', default='../data/GlaucomaVSDiabetes', help="Directory with the raw fundus dataset")
+parser.add_argument('--output_dir', default='../data/ResizedData', help="Where to write the new data")
+parser.add_argument('--filter_dir', default='../data/filter', help="Where to save and get the image filter")
 
 args = parser.parse_args()
 
@@ -81,9 +81,12 @@ def resize_images(filter_img, width= 177, height = 128):
 			index = 1
 			for filename in tqdm(filenames[split]):
 				image = Image.open(filename)
-				image = apply_image_filter(filter_img, image)
-				resize_and_save(image, output_dir_split, disease, index, width = width, height = height)
-				index = index + 1
+				try:
+					image = apply_image_filter(filter_img, image)
+					resize_and_save(image, output_dir_split, disease, index, width = width, height = height)
+					index = index + 1
+				except NameError:
+					os.remove(filename) ##exception raise on image being too dark
 
 def round_up_images(filter_img):
 	
