@@ -3,18 +3,8 @@
 from __future__ import print_function
 import numpy as np
 
-def meanVarNormalization(Xtrain, Xdev, Xtest):
-    # Mean Var Normalization
-    mean = np.mean(Xtrain, 0)
-    std = np.std(Xtrain, 0)
-    std[std[:] < 0.000001] = 1
-    Xtrain = (Xtrain - mean) / std
-    Xdev = (Xdev - mean) / std
-    Xtest = (Xtest - mean) / std
-    return Xtrain, Xdev, Xtest
 
-
-def getConfusionMatrix(predicted, target, numClasses):
+def getConfusionMatrix(predicted, target, numClasses=1):
     '''
     Returns a confusion matrix for a multiclass classification
     problem. `predicted` is a 1-D array of integers representing
@@ -25,6 +15,7 @@ def getConfusionMatrix(predicted, target, numClasses):
     Use`printFormattedConfusionMatrix` to echo the confusion matrix
     in a user friendly form.
     '''
+    predicted = np.argmax(predicted, axis=1)
     assert(predicted.ndim == 1)
     assert(target.ndim == 1)
     arr = np.zeros([numClasses, numClasses])

@@ -21,7 +21,7 @@ def train_transformer_list(params):
 # loader for evaluation, no horizontal flip
 def eval_transformer_list(params):
     eval_transformer = transforms.Compose([
-        transforms.Grayscale(num_output_channels=params.num_input_channels), 
+        # transforms.Grayscale(num_output_channels=params.num_input_channels), 
         # transforms.Resize([177, 128]),  # resize the image to 177x128 (remove if images are already 64x64)
         transforms.ToTensor()])  # transform it into a torch tensor
     return eval_transformer
@@ -39,7 +39,7 @@ class FundusDataset(Dataset):
             transform: (torchvision.transforms) transformation to apply on image
         """
         self.filenames = os.listdir(data_dir)
-        self.filenames = [os.path.join(data_dir, f) for f in self.filenames if f.endswith('.jpg')]
+        self.filenames = [os.path.join(data_dir, f) for f in self.filenames if f.endswith('.jpg') or f.endswith('.png')]
 
         # self.labels = [int(os.path.split(filename)[-1][0]) for filename in self.filenames]
         self.labels = []

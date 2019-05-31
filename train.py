@@ -41,7 +41,9 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
     model.train()
 
     # summary for current training loop and a running average object for loss
-    summ = []
+    summ = {}
+    for taskname in params.all_tasks:
+        summ[taskname] = []
     loss_avg = utils.RunningAverage()
 
     # Use tqdm for progress bar
@@ -84,8 +86,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             t.update()
 
     # compute mean of all metrics in summary
-    metrics_mean = {metric:np.mean([x[metric].item() for x in summ]) for metric in summ[0]}
-    # metrics_mean = {metric:np.mean([x[metric] for x in summ]) for metric in summ[0]}
+    metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) for metric in summ[taskname][0] for taskname in params.all_tasks} 
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Train metrics: " + metrics_string)
 

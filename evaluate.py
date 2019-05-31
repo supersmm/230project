@@ -35,7 +35,9 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     model.eval()
 
     # summary for current eval loop
-    summ = []
+    summ = {}
+    for taskname in params.all_tasks:
+        summ[taskname] = []
 
     # compute metrics over the dataset
     for data_batch, labels_batch in dataloader:
@@ -59,10 +61,11 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
             summary_batch = {metric: metrics[metric](output_task, labels_task)
                              for metric in metrics}
             summary_batch['loss'] = loss[task].data # summary_batch['loss'] = loss.data[0]
-            summ.append(summary_batch)
+            summ[params.all_tasks[task]].append(summary_batch) # summ.append(summary_batch)
 
     # compute mean of all metrics in summary
-    metrics_mean = {metric:np.mean([x[metric].item() for x in summ]) for metric in summ[0]} 
+    metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) for metric in summ[taskname][0] for taskname in params.all_tasks} 
+    # metrics_mean = {metric:np.mean([x[metric].item() for x in summ]) for metric in summ[0]} 
     # metrics_mean = {metric:np.mean([x[metric] for x in summ]) for metric in summ[0]} 
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)

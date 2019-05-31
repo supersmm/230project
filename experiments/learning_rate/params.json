@@ -4,6 +4,7 @@
     "num_epochs": 10,
     "dropout_rate":0.8, 
     "num_channels": 32,
+    "num_input_channels": 2,
     "save_summary_steps": 100,
     "num_workers": 4,
     "all_tasks": ["Glaucoma", "Diabetes"]
