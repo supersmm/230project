@@ -5,6 +5,8 @@ import time
 import utils
 import logging
 import torch
+from tqdm import tqdm
+import numpy as np
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
@@ -21,7 +23,7 @@ cwd = os.getcwd()
 import Alex.Data_loader as Data_loader
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-parser.add_argument('--data', metavar='DATA_PATH', default='./data/ResizedData',
+parser.add_argument('--data_dir', metavar='DATA_PATH', default='./data/ResizedData',
                     help='path to imagenet data (default: ./data/ResizedData)')
 parser.add_argument('--model_dir', default='experiments/greyscale', 
                     help="Directory containing params.json")
@@ -77,16 +79,12 @@ def main():
     # create model
     model = alexnet.alexnet(pretrained=True)
     input_size = (178,128)
-
-    #load with GPU
-    model.features = torch.nn.DataParallel(model.features)
+    
     model.cuda()
-    
-    
     # define loss function and optimizer
-    loss = nn.CrossEntropyLoss().cuda()
+    loss = nn.MultiLabelSoftMarginLoss().cuda()
 
-    optimizer = torch.optim.Adam(model.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
     cudnn.benchmark = True
     
@@ -108,17 +106,18 @@ def main():
 
 
     # Data loading code
-    if not os.path.exists(args.data+'/train_data'):
-        print("==> Data directory"+args.data+"does not exits")
+    if not os.path.exists(args.data_dir+'/train_data'):
+        print("==> Data directory"+args.data_dir+"does not exits")
         print("==> Please specify the correct data path by")
         print("==>     --data <DATA_PATH>")
         return
     
-    dataloaders = Data_loader.fetch_dataloader(['train', 'val'], args.data_dir, params)
+    dataloaders = Data_loader.fetch_dataloader(['train', 'val', 'test'], args.data_dir, params)
 
     train_loader = dataloaders['train']
 
     val_loader = dataloaders['train']
+    test_loader = dataloaders['test']
 
     print(model)
 
@@ -141,100 +140,94 @@ def main():
             'best_prec1': best_prec1,
             'optimizer' : optimizer.state_dict(),
         }, is_best)
+    validate(test_loader, model, loss)
 
 
 def train(train_loader, model, loss, optimizer, epoch):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
+    top = AverageMeter()
 
     # switch to train mode
     model.train()
 
     end = time.time()
-    for i, (input, label) in enumerate(train_loader):
-        # measure data loading time
-        data_time.update(time.time() - end)
+    with tqdm(total=len(train_loader)) as t:
+        for i, (datas, label) in enumerate(train_loader):
+            # measure data loading time
+            data_time.update(time.time() - end)
+    
+            input_var = torch.autograd.Variable(datas.cuda())
+            label_var = torch.autograd.Variable(label.cuda()).double()
+    
+            # compute output
+            output = model(input_var).double()
+            cost = loss(output, label_var)
+    
+            # measure accuracy and record cost
+            prec = accuracy(output.data, label)
+            losses.update(cost.data, len(datas))
+            top.update(prec, datas.size(0))
+    
+            # compute gradient and do SGD step
+            optimizer.zero_grad()
+            cost.backward()
+            optimizer.step()
+    
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+    
 
-        label = label.cuda()
-        input_var = torch.autograd.Variable(input)
-        label_var = torch.autograd.Variable(label)
-
-        # compute output
-        output = model(input_var)
-        cost = loss(output, label_var)
-
-        # measure accuracy and record cost
-        prec1, prec5 = accuracy(output.data, label, topk=(1, 5))
-        losses.update(cost.data[0], input.size(0))
-        top1.update(prec1[0], input.size(0))
-        top5.update(prec5[0], input.size(0))
-
-        # compute gradient and do SGD step
-        optimizer.zero_grad()
-        cost.backward()
-        optimizer.step()
-
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
-
+            gc.collect()
+            t.set_postfix(loss='{:05.3f}'.format(losses()))
+            t.update()
         if i % args.print_freq == 0:
             print('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                  'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
                    epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses, top1=top1, top5=top5))
-        gc.collect()
+                   data_time=data_time, loss=losses))
 
 
 def validate(val_loader, model, loss):
     batch_time = AverageMeter()
     losses = AverageMeter()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
+    top = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
 
     end = time.time()
-    for i, (input, label) in enumerate(val_loader):
-        label = label.cuda()
-        input_var = torch.autograd.Variable(input, volatile=True)
-        label_var = torch.autograd.Variable(label, volatile=True)
+    for i, (datas, label) in enumerate(val_loader):
+        input_var = torch.autograd.Variable(datas.cuda())
+        label_var = torch.autograd.Variable(label.cuda()).double()
 
         # compute output
-        output = model(input_var)
+        output = model(input_var).double()
         cost = loss(output, label_var)
 
         # measure accuracy and record cost
-        prec1, prec5 = accuracy(output.data, label, topk=(1, 5))
-        losses.update(cost.data[0], input.size(0))
-        top1.update(prec1[0], input.size(0))
-        top5.update(prec5[0], input.size(0))
+        prec = accuracy(output.data, label)
+        losses.update(cost.data, len(datas))
+        top.update(prec, datas.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % args.print_freq == 0:
-            print('Test: [{0}/{1}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                  'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                   i, len(val_loader), batch_time=batch_time, loss=losses,
-                   top1=top1, top5=top5))
+    if i % args.print_freq == 0:
+        print('Test: [{0}/{1}]\t'
+              'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+              'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
+               i, len(val_loader), batch_time=batch_time, loss=losses))
 
-    print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
-          .format(top1=top1, top5=top5))
+    print(' * Prec@ {top.avg:.3f}'
+          .format(top=top))
 
-    return top1.avg
+    return top.avg
 
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
@@ -259,22 +252,20 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+        
+    def __call__(self):
+        return self.avg
 
 
-def accuracy(output, label, topk=(1,)):
-    """Computes the precision@k for the specified values of k"""
-    maxk = max(topk)
-    batch_size = label.size(0)
+def accuracy(outputs, labels):
 
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    correct = pred.eq(label.view(1, -1).expand_as(pred))
-
-    res = []
-    for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
-        res.append(correct_k.mul_(100.0 / batch_size))
-    return res
+    outputs = np.argmax(outputs.cpu(), axis=0)
+    batchsize = len(labels)
+    
+    acc = 0
+    acc = (outputs.int()==labels.int()).cpu().sum()
+    acc = acc/float(batchsize)
+    return acc
 
 
 if __name__ == '__main__':

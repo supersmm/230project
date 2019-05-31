@@ -1,6 +1,6 @@
 import random
 import os
-
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
@@ -46,7 +46,7 @@ class FundusDataset(Dataset):
             imagename = os.path.split(filename)[-1]
             ind = imagename.find('(')
             label = imagename[(ind+1):(ind+3)]
-            finallabel = np.array(list(map(int, list(label))))
+            finallabel = np.array(list(map(float, list(label))))
             self.labels.append(finallabel)
         self.transform = transform
 

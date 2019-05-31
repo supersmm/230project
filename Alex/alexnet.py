@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 import sys
 sys.path.append('../')
 from utils import load_state_dict_from_url
@@ -48,6 +49,17 @@ class AlexNet(nn.Module):
         x = x.view(x.size(0), 256 * 6 * 6)
         x = self.classifier(x)
         return x
+    
+class Post_AlexNet(nn.Module):
+    def __init__(self, AlexnetClass = 1000, num_classes = 2):
+        super(Post_AlexNet, self).__init__()
+        self.linear = nn.Linear(AlexnetClass, num_classes)
+        
+    def forward(self, x):
+        x = F.dropout(x)
+        x = self.linear(x)
+        x = F.sigmoid(x)
+        return x
 
 
 def alexnet(pretrained=False, progress=True, **kwargs):
@@ -62,4 +74,7 @@ def alexnet(pretrained=False, progress=True, **kwargs):
         state_dict = load_state_dict_from_url(model_urls['alexnet'],
                                               progress=progress)
         model.load_state_dict(state_dict)
+    model.features[0] = nn.Conv2d(1, 64, kernel_size=11, stride=4, padding=2)
+    Post_model = Post_AlexNet( num_classes = 2)
+    model = nn.Sequential(model, Post_model)
     return model
