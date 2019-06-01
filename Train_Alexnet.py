@@ -6,7 +6,6 @@ import utils
 import logging
 import torch
 from tqdm import tqdm
-import numpy as np
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
@@ -25,30 +24,12 @@ import Alex.Data_loader as Data_loader
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data_dir', metavar='DATA_PATH', default='./data/ResizedData',
                     help='path to imagenet data (default: ./data/ResizedData)')
-parser.add_argument('--model_dir', default='experiments/greyscale', 
+parser.add_argument('--model_dir', default='experiments/AlexNet', 
                     help="Directory containing params.json")
-parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
-                    help='number of data loading workers (default: 8)')
-parser.add_argument('--epochs', default=500, type=int, metavar='N',
-                    help='number of total epochs to run')
-parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
-                    help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=256, type=int,
-                    metavar='N', help='mini-batch size (default: 256)')
-parser.add_argument('--learning_rate', default=0.01, type=float,
-                    metavar='LR', help='initial learning rate')
-parser.add_argument('--momentum', default=0.90, type=float, metavar='M',
-                    help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
-                    metavar='W', help='weight decay (default: 5e-4)')
 parser.add_argument('--print-freq', '-p', default=50, type=int,
                     metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('--world-size', default=1, type=int,
-                    help='number of distributed processes')
-parser.add_argument('--dist-backend', default='NCCL', type=str,
-                    help='distributed backend (gloo for cpu training, NCCL for GPU training')
 
 best_prec1 = 0
 
@@ -66,7 +47,8 @@ def main():
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
-    if params.cuda: torch.cuda.manual_seed(230)
+    if params.cuda: 
+        torch.cuda.manual_seed(230)
 
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
@@ -78,13 +60,12 @@ def main():
 
     # create model
     model = alexnet.alexnet(pretrained=True)
-    input_size = (178,128)
     
     model.cuda()
     # define loss function and optimizer
     loss = nn.MultiLabelSoftMarginLoss().cuda()
 
-    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    optimizer = torch.optim.Adam(model.parameters(), params.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=params.weight_decay, amsgrad=False)
 
     cudnn.benchmark = True
     
@@ -140,7 +121,7 @@ def main():
             'best_prec1': best_prec1,
             'optimizer' : optimizer.state_dict(),
         }, is_best)
-    validate(test_loader, model, loss)
+    validate(val_loader, model, loss)
 
 
 def train(train_loader, model, loss, optimizer, epoch):
@@ -154,7 +135,7 @@ def train(train_loader, model, loss, optimizer, epoch):
 
     end = time.time()
     with tqdm(total=len(train_loader)) as t:
-        for i, (datas, label) in enumerate(train_loader):
+        for i, (datas, label, _) in enumerate(train_loader):
             # measure data loading time
             data_time.update(time.time() - end)
     
@@ -183,13 +164,13 @@ def train(train_loader, model, loss, optimizer, epoch):
             gc.collect()
             t.set_postfix(loss='{:05.3f}'.format(losses()))
             t.update()
-        if i % args.print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
-                   epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses))
+        
+        print('Epoch: [{0}][{1}/{2}]\t'
+              'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+              'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+              'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
+               epoch, i, len(train_loader), batch_time=batch_time,
+               data_time=data_time, loss=losses))
 
 
 def validate(val_loader, model, loss):
@@ -218,14 +199,13 @@ def validate(val_loader, model, loss):
         batch_time.update(time.time() - end)
         end = time.time()
 
-    if i % args.print_freq == 0:
-        print('Test: [{0}/{1}]\t'
-              'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-              'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
-               i, len(val_loader), batch_time=batch_time, loss=losses))
+    
+    print('Test: [{0}/{1}]\t'
+          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+          'Loss {loss.val:.4f} ({loss.avg:.4f})'
+          'Prec@ {top.avg:.3f}({top.avg:.4f})'.format(
+           i, len(val_loader), batch_time=batch_time, loss=losses, top = top))
 
-    print(' * Prec@ {top.avg:.3f}'
-          .format(top=top))
 
     return top.avg
 
@@ -259,7 +239,7 @@ class AverageMeter(object):
 
 def accuracy(outputs, labels):
 
-    outputs = np.argmax(outputs.cpu(), axis=0)
+    outputs = outputs.cpu()> 0.6
     batchsize = len(labels)
     
     acc = 0

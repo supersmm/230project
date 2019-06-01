@@ -67,7 +67,7 @@ class FundusDataset(Dataset):
         """
         image = Image.open(self.filenames[idx])  # PIL image
         image = self.transform(image)
-        return image, self.labels[idx]
+        return image, self.labels[idx], self.filenames[idx]
 
 
 def fetch_dataloader(types, data_dir, params):
