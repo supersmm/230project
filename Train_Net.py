@@ -152,6 +152,8 @@ def train(train_loader, model, loss, optimizer, epoch):
     data_time = AverageMeter()
     losses = AverageMeter()
     top = AverageMeter()
+    diab = (AverageMeter(), AverageMeter())
+    glau = (AverageMeter(), AverageMeter())
 
     # switch to train mode
     model.train()
@@ -170,7 +172,7 @@ def train(train_loader, model, loss, optimizer, epoch):
             cost = loss(output, label_var)
     
             # measure accuracy and record cost
-            prec = accuracy(output.data, label)
+            prec, diab, glau = accuracy(output.data, label)
             losses.update(cost.data, len(datas))
             top.update(prec, datas.size(0))
     
@@ -191,15 +193,20 @@ def train(train_loader, model, loss, optimizer, epoch):
         print('Epoch: [{0}][{1}/{2}]\t'
               'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
               'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-              'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
+              'Loss {loss.val:.4f} ({loss.avg:.4f})'
+              'Prec@ {top.avg:.3f}({top.avg:.4f})'
+          'Diabetes F1 {diabF1:.4f}({diabF1:.4f})'
+          'Glaucoma F1 {glauF1:.4f}({glauF1:.4f})'.format(
                epoch, i, len(train_loader), batch_time=batch_time,
-               data_time=data_time, loss=losses))
+               data_time=data_time, loss=losses, top = top, diabF1 = F1(diab), glauF1 = F1(glau)))
 
 
 def validate(val_loader, model, loss):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top = AverageMeter()
+    diab = (AverageMeter(), AverageMeter())
+    glau = (AverageMeter(), AverageMeter())
 
     # switch to evaluate mode
     model.eval()
@@ -214,7 +221,7 @@ def validate(val_loader, model, loss):
         cost = loss(output, label_var)
 
         # measure accuracy and record cost
-        prec = accuracy(output.data, label)
+        prec, diab, glau = accuracy(output.data, label)
         losses.update(cost.data, len(datas))
         top.update(prec, datas.size(0))
 
@@ -226,8 +233,10 @@ def validate(val_loader, model, loss):
     print('Test: [{0}/{1}]\t'
           'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
           'Loss {loss.val:.4f} ({loss.avg:.4f})'
-          'Prec@ {top.avg:.3f}({top.avg:.4f})'.format(
-           i, len(val_loader), batch_time=batch_time, loss=losses, top = top))
+          'Prec@ {top.avg:.4f}({top.avg:.4f})'
+          'Diabetes F1 {diabF1:.4f}({diabF1:.4f})'
+          'Glaucoma F1 {glauF1:.4f}({glauF1:.4f})'.format(
+           i, len(val_loader), batch_time=batch_time, loss=losses, top = top, diabF1 = F1(diab), glauF1 = F1(glau)))
 
 
     return top.avg
@@ -238,6 +247,8 @@ def save_checkpoint(state, is_best, path, filename, version, network):
     if is_best:
         shutil.copyfile(os.path.join(path, filename), os.path.join(path, network + version + '_model_best.pth.tar') )
 
+def F1(T):
+    return 2*(T[0].avg * T[1].avg)/(T[0].avg + T[1].avg)
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -268,7 +279,14 @@ def accuracy(outputs, labels):
     acc = 0
     acc = (outputs.int()==labels.int()).cpu().sum()
     acc = acc/float(batchsize)
-    return acc
+    True_pos_diab = ((outputs.int()[0] == 1) & (labels.int()[0] == 1)).cpu().sum()
+    recall_diab = True_pos_diab/(1==labels.int()[0]).cpu().sum()
+    precision_diab = True_pos_diab/(1==outputs.int()[0]).cpu().sum()
+    True_pos_glau = ((outputs.int()[1] == 1) & (labels.int()[1] == 1)).cpu().sum()
+    recall_glau = True_pos_glau/(1==labels.int()[1]).cpu().sum()
+    precision_glau = True_pos_glau/(1==outputs.int()[1]).cpu().sum()
+    
+    return acc, (recall_diab, precision_diab), (recall_glau, precision_glau)
 
 
 if __name__ == '__main__':
