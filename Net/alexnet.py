@@ -62,7 +62,7 @@ class Post_AlexNet(nn.Module):
         return x
 
 
-def alexnet(pretrained=False, progress=True, **kwargs):
+def alexnet(pretrained=False, progress=True, num_classes = 2, **kwargs):
     r"""AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
     Args:
@@ -75,6 +75,6 @@ def alexnet(pretrained=False, progress=True, **kwargs):
                                               progress=progress)
         model.load_state_dict(state_dict)
     model.features[0] = nn.Conv2d(1, 64, kernel_size=11, stride=4, padding=2)
-    Post_model = Post_AlexNet( num_classes = 2)
+    Post_model = Post_AlexNet( num_classes = num_classes)
     model = nn.Sequential(model, Post_model)
     return model
