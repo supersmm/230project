@@ -18,7 +18,7 @@ from evaluate import evaluate
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='data/ResizedData', help="Directory containing the dataset")
-parser.add_argument('--model_dir', default='experiments/base_model', help="Directory containing params.json")
+parser.add_argument('--model_dir', default='experiments/greyscale', help="Directory containing params.json")
 parser.add_argument('--restore_file', default=None,
                     help="Optional, name of the file in --model_dir containing weights to reload before \
                     training")  # 'best' or 'train'
