@@ -93,12 +93,11 @@ def main():
         print("==>     --data <DATA_PATH>")
         return
     
-    dataloaders = Data_loader.fetch_dataloader(['train', 'val', 'test'], args.data_dir, params)
+    dataloaders = Data_loader.fetch_dataloader(['train', 'val'], args.data_dir, params)
 
     train_loader = dataloaders['train']
 
     val_loader = dataloaders['train']
-    test_loader = dataloaders['test']
 
     print(model)
 
@@ -210,10 +209,10 @@ def validate(val_loader, model, loss):
     return top.avg
 
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
+def save_checkpoint(state, is_best, path, filename='checkpoint.pth.tar'):
+    torch.save(state, os.path.join(path, filename))
     if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
+        shutil.copyfile(os.path.join(path, filename), os.path.join(path, 'model_best.pth.tar') )
 
 
 class AverageMeter(object):
