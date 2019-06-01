@@ -199,7 +199,7 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     
 class Post_DenseNet(nn.Module):
     def __init__(self, AlexnetClass = 1000, num_classes = 2):
-        super(Post_AlexNet, self).__init__()
+        super(Post_DenseNet, self).__init__()
         self.linear = nn.Linear(AlexnetClass, num_classes)
         
     def forward(self, x):
@@ -211,16 +211,26 @@ class Post_DenseNet(nn.Module):
 def net(version, pretrained=False, progress=True, num_classes = 2, **kwargs):
     if version == '121':
         model = densenet121(pretrained=pretrained)
+        model.features[0]= nn.Conv2d(1, 64, kernel_size=7, stride=2,
+                                padding=3, bias=False)
     elif version == '161':
         model = densenet161(pretrained=pretrained)
+        model.features[0]= nn.Conv2d(1, 96, kernel_size=7, stride=2,
+                                padding=3, bias=False)
     elif version == '169':
         model = densenet169(pretrained=pretrained)
+        model.features[0]= nn.Conv2d(1, 64, kernel_size=7, stride=2,
+                                padding=3, bias=False)
     elif version == '201':
         model = densenet201(pretrained=pretrained)
+        model.features[0]= nn.Conv2d(1, 64, kernel_size=7, stride=2,
+                                padding=3, bias=False)
     else:
         print('No DenseNet version found with {}'.format(version))
         sys.exit()
+    #load model and rewrite the first layer to fit grayscale
     Post_model = Post_DenseNet( num_classes = num_classes)
+    
     model = nn.Sequential(model, Post_model)
     return model
     
