@@ -4,7 +4,7 @@ from __future__ import print_function
 import numpy as np
 
 
-def getConfusionMatrix(predicted, target, numClasses=1):
+def getConfusionMatrix(predicted, target, numClasses=2):
     '''
     Returns a confusion matrix for a multiclass classification
     problem. `predicted` is a 1-D array of integers representing

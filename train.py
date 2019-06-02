@@ -78,13 +78,14 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
                     summary_batch = {metric:metrics[metric](output_task, labels_task)
                                      for metric in metrics}
                     summary_batch['loss'] = loss[task].data # summary_batch['loss'] = loss.data[0]
-                    summ.append(summary_batch)
-                    
-                    print("Task: ", params.all_tasks[task])
-                    functions.printFormattedConfusionMatrix(functions.getConfusionMatrix(output_task, labels_task))
+                    summ[params.all_tasks[task]].append(summary_batch)
 
             # update the average loss
             loss_avg.update(loss[-1].data) # loss_avg.update(loss.data[0])
+
+            for task in range(len(params.all_tasks)):
+                print("Task: ", params.all_tasks[task])
+                functions.printFormattedConfusionMatrix(functions.getConfusionMatrix(output_task, labels_task))
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -127,8 +128,8 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
 
         # Evaluate for one epoch on validation set
         val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
-
-        val_acc = val_metrics['accuracy']
+        
+        val_acc = np.mean([val_metrics[taskname+'-accuracy'] for taskname in params.all_tasks])
         is_best = val_acc>=best_val_acc
 
         # Save weights
