@@ -15,6 +15,7 @@ import utils
 import model.net as net
 import model.data_loader as data_loader
 from evaluate import evaluate
+import model.functions as functions
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='data/ResizedData', help="Directory containing the dataset")
@@ -78,6 +79,9 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
                                      for metric in metrics}
                     summary_batch['loss'] = loss[task].data # summary_batch['loss'] = loss.data[0]
                     summ.append(summary_batch)
+                    
+                    print("Task: ", params.all_tasks[task])
+                    functions.printFormattedConfusionMatrix(functions.getConfusionMatrix(output_task, labels_task))
 
             # update the average loss
             loss_avg.update(loss[-1].data) # loss_avg.update(loss.data[0])

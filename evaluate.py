@@ -11,6 +11,7 @@ from torch.autograd import Variable
 import utils
 import model.net as net
 import model.data_loader as data_loader
+import model.functions as functions
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='data/ResizedData', help="Directory containing the dataset")
@@ -62,9 +63,13 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
                              for metric in metrics}
             summary_batch['loss'] = loss[task].data # summary_batch['loss'] = loss.data[0]
             summ[params.all_tasks[task]].append(summary_batch) # summ.append(summary_batch)
+    
+            print("Task: ", params.all_tasks[task])
+            functions.printFormattedConfusionMatrix(functions.getConfusionMatrix(output_task, labels_task))
 
     # compute mean of all metrics in summary
-    metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) for metric in summ[taskname][0] for taskname in params.all_tasks} 
+    metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) 
+                    for metric in summ[taskname][0] for taskname in params.all_tasks} 
     # metrics_mean = {metric:np.mean([x[metric].item() for x in summ]) for metric in summ[0]} 
     # metrics_mean = {metric:np.mean([x[metric] for x in summ]) for metric in summ[0]} 
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
