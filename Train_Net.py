@@ -5,9 +5,9 @@ import time
 import utils
 import logging
 import torch
-import sys
+import model_loader
 from tqdm import tqdm
-import Net.loss as Customloss
+from Evaluation_Matric import F1, AverageMeter, accuracy
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
@@ -36,14 +36,14 @@ parser.add_argument('--network', type=str,
 parser.add_argument('--log', default='warning', type=str,
                     help='set logging level')
 
-best_prec1 = (0,0)
+
 
 
 def main():
-    global args, best_prec1
+    global args
     args = parser.parse_args()
     
-    
+    best_F1 = (1e-4, 1e-4)
     
     #load json
     json_path = os.path.join(args.model_dir, args.network)
@@ -67,14 +67,13 @@ def main():
 
 
     # create model
-    print("Loading Model")
-    model, version = loadModel(args.network, params, pretrained = True)
-    print("Model Loaded")
+    logging.warning("Loading Model")
+    model, version = model_loader.loadModel(args.network, params, pretrained = True)
+    logging.warning("Model Loaded")
     
     model.cuda()
     # define loss function and optimizer
-    loss = Customloss.UnvenWeightCrossEntropyLoss(weights=[0.9, 0.1]).cuda()
-
+    loss = model_loader.my_loss
     optimizer = torch.optim.Adam(model.parameters(), params.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=params.weight_decay, amsgrad=False)
 
     cudnn.benchmark = True
@@ -85,10 +84,9 @@ def main():
     if args.resume:
         if os.path.isfile(checkpointfile):
             logging.info("Loading checkpoint {}".format(checkpointfile))
-            print("=> loading checkpoint '{}'".format(checkpointfile))
             checkpoint = torch.load(checkpointfile)
             args.start_epoch = checkpoint['epoch']
-            best_prec1 = checkpoint['best_prec1']
+            best_F1 = checkpoint['best_F1']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             print("=> loaded checkpoint '{}' (epoch {})"
@@ -124,45 +122,21 @@ def main():
         train(train_loader, model, loss, optimizer, epoch)
 
         # evaluate on validation set
-        prec1 = validate(val_loader, model, loss)
+        val_result = validate(val_loader, model, loss)
 
-        # remember best prec@1 and save checkpoint
-        is_best = prec1 > best_prec1
-        best_prec1 = max(prec1, best_prec1)
+        # remember best F1 and save checkpoint
+        is_best = (2*(val_result[1][0]*val_result[2][0])/(val_result[1][0]+val_result[2][0])) > (2*(best_F1[0]*best_F1[1])/(best_F1[0]+best_F1[1]))
+        best_F1 = max((val_result[1][0],val_result[2][0]), best_F1)
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
-            'best_prec1': best_prec1,
+            'best_F1': best_F1,
             'optimizer' : optimizer.state_dict(),
         }, is_best, path=json_path, filename=checkpointfile, version=version, network=args.network)
+        if is_best:
+            save_to_ini(params, args.model_dir, args.network, version, val_result)
     validate(val_loader, model, loss)
-    
-def loadModel(netname, params, pretrained = True):
-    Netpath = 'Net'
-    Netfile = os.path.join(Netpath, netname + '.py')
-    assert os.path.isfile(Netfile), "No python file found for {}, (file name is case sensitive)".format(Netfile)
-    netname = netname.lower()
-    if netname == 'alexnet': 
-        model, version = loadAlexnet(pretrained)
-    elif 'densenet': 
-        model, version = loadDensenet(pretrained, params)
-    else:
-        print("No model with the name {} found, please check your spelling.".format(netname))
-        print("Net List:")
-        print("    AlexNet")
-        print("    DenseNet")
-        sys.exit()
-    return model, version
-    
-def loadAlexnet(pretrained):
-    import Net.alexnet
-    print("Loading AlexNet")
-    return Net.alexnet.alexnet(pretrained = pretrained, num_classes = 2), ''
-    
-def loadDensenet(pretrained, params):
-    import Net.densenet
-    print("Loading DenseNet")
-    return Net.densenet.net(params.version, pretrained), params.version
+        
 
 def train(train_loader, model, loss, optimizer, epoch):
     logging.info("Epoch {}:".format(epoch))
@@ -217,16 +191,22 @@ def train(train_loader, model, loss, optimizer, epoch):
             t.set_postfix(loss='{:05.3f}'.format(losses()))
             t.update()
         
-        print('Epoch: [{0}][{1}/{2}]\n'
+        diabF1 = F1(diab)
+        glauF1 = F1(glau)
+        logging.warning('Epoch: [{0}][{1}/{2}]\n'
               '    Time {batch_time.val:.3f} ({batch_time.avg:.3f})\n'
               '    Data {data_time.val:.3f} ({data_time.avg:.3f})\n'
               '    Loss {loss.val:.4f} ({loss.avg:.4f})\n'
-              '    Prec Diabetes@ {acc[0].avg:.3f}({acc[0].avg:.4f})\n'
-              '    Prec Glaucoma@ {acc[1].avg:.3f}({acc[1].avg:.4f})\n'
-              '    Diabetes F1 {diabF1:.4f}({diabF1:.4f})\n'
-              '    Glaucoma F1 {glauF1:.4f}({glauF1:.4f})\n'.format(
+              '    Accuracy Diabetes@ {acc[0].avg:.3f}({acc[0].avg:.4f})\n'
+              '        Diabetes F1 {diabF1[0]:.4f}({diabF1[0]:.4f})\n'
+              '            Diabetes recall {diabF1[1]:.4f}({diabF1[1]:.4f})\n'
+              '            Diabetes precision {diabF1[2]:.4f}({diabF1[2]:.4f})\n'
+              '    Accuracy Glaucoma@ {acc[1].avg:.3f}({acc[1].avg:.4f})\n'
+              '        Glaucoma F1 {glauF1[0]:.4f}({glauF1[0]:.4f})\n'
+              '            Glaucoma recall {glauF1[1]:.4f}({glauF1[1]:.4f})\n'
+              '            Glaucoma precision {glauF1[2]:.4f}({glauF1[2]:.4f})\n'.format(
                epoch, i, len(train_loader), batch_time=batch_time,
-               data_time=data_time, loss=losses, acc = acc, diabF1 = F1(diab), glauF1 = F1(glau)))
+               data_time=data_time, loss=losses, acc = acc, diabF1 = diabF1, glauF1 = glauF1))
 
 
 def validate(val_loader, model, loss):
@@ -268,18 +248,23 @@ def validate(val_loader, model, loss):
         batch_time.update(time.time() - end)
         end = time.time()
 
-    
-    print('Test: [{0}/{1}]\n'
+    diabF1 = F1(diab)
+    glauF1 = F1(glau)
+    logging.warning('Test: [{0}/{1}]\n'
           '    Time {batch_time.val:.3f} ({batch_time.avg:.3f})\n'
           '    Loss {loss.val:.4f} ({loss.avg:.4f})\n'
-          '    Prec Diabetes@ {acc[0].avg:.3f}({acc[0].avg:.4f})\n'
-          '    Prec Glaucoma@ {acc[1].avg:.3f}({acc[1].avg:.4f})\n'
-          '    Diabetes F1 {diabF1:.4f}({diabF1:.4f})\n'
-          '    Glaucoma F1 {glauF1:.4f}({glauF1:.4f})\n'.format(
-           i, len(val_loader), batch_time=batch_time, loss=losses, acc = acc, diabF1 = F1(diab), glauF1 = F1(glau)))
+          '    Accuracy Diabetes@ {acc[0].avg:.3f}({acc[0].avg:.4f})\n'
+          '        Diabetes F1 {diabF1[0]:.4f}({diabF1[0]:.4f})\n'
+          '            Diabetes recall {diabF1[1]:.4f}({diabF1[1]:.4f})\n'
+          '            Diabetes precision {diabF1[2]:.4f}({diabF1[2]:.4f})\n'
+          '    Accuracy Glaucoma@ {acc[1].avg:.3f}({acc[1].avg:.4f})\n'
+          '        Glaucoma F1 {glauF1[0]:.4f}({glauF1[0]:.4f})\n'
+          '            Glaucoma recall {glauF1[1]:.4f}({glauF1[1]:.4f})\n'
+          '            Glaucoma precision {glauF1[2]:.4f}({glauF1[2]:.4f})\n'.format(
+           i, len(val_loader), batch_time=batch_time, loss=losses, acc = acc, diabF1 = diabF1, glauF1 = glauF1))
 
 
-    return acc[0].avg, acc[1].avg
+    return acc, diabF1, glauF1
 
 
 def save_checkpoint(state, is_best, path, filename, version, network):
@@ -287,59 +272,31 @@ def save_checkpoint(state, is_best, path, filename, version, network):
     if is_best:
         shutil.copyfile(filename, os.path.join(path, network + version + '_model_best.pth.tar') )
 
-def F1(T):
-    #create elson to prevent divide by zero
-    epslon = 1e-6
-    recall = T[0].sum/(T[1].sum + epslon)
-    precision = T[0].sum/(T[2].sum + epslon)
-    return 2*(recall*precision)/(recall+precision)
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-        
-    def __call__(self):
-        return self.avg
-
-
-def accuracy(outputs, labels):
-
-    output = outputs.cpu()> 0.6
-    batchsize = len(labels)
-
-    acc_diab = 0
-    acc_diab = (output.int()[:,0]==labels.int()[:,0]).cpu().sum().float()
-    acc_diab = acc_diab/float(batchsize)
-
-    acc_glau = 0
-    acc_glau = (output.int()[:,1]==labels.int()[:,1]).cpu().sum().float()
-    acc_glau = acc_glau/float(batchsize)
-
-    True_pos_diab = ((output.int()[:,0] == 1) & (labels.int()[:,0] == 1)).cpu().sum()
-    pos_diab = (1==labels.int()[:,0]).cpu().sum().float()
-    pos_redict_diab = (1==output.int()[:,0]).cpu().sum().float()
-
-
-    True_pos_glau = ((output.int()[:,1] == 1) & (labels.int()[:,1] == 1)).cpu().sum()
-    pos_glau = (labels.int()[:,1] == 1).cpu().sum().float()
-    pos_redict_glau = (output.int()[:,1] == 1).cpu().sum().float()
-
+def save_to_ini(params, path, network, version, val_result):
+    config = utils.ConfigParser()
+    section_name = network + str(version)
+    config_name = os.path.join(path, 'BestCompare.ini')
+    if os.path.isfile(config_name):
+        config.read(config_name)
+        if config.has_section(section_name):
+            config.read(section_name)
+        else:
+            config.add_section(section_name)
+    else:
+        config.add_section(section_name)
+    config.set(section_name, 'Diabetes Accuracy', str(val_result[0][0].avg))
+    config.set(section_name, '    Diabetes F1', str(val_result[1][0]))
+    config.set(section_name, '        Diabetes recall', str(val_result[1][1]))
+    config.set(section_name, '        Diabetes precision', str(val_result[1][2]))
     
-    return (acc_diab, acc_glau), (True_pos_diab, pos_diab, pos_redict_diab), (True_pos_glau, pos_glau, pos_redict_glau)
-
+    config.set(section_name, 'Glaucoma Accuracy', str(val_result[0][1].avg))
+    config.set(section_name, '    Glaucoma F1', str(val_result[2][0]))
+    config.set(section_name, '        Glaucoma recall', str(val_result[2][1]))
+    config.set(section_name, '        Glaucoma precision', str(val_result[2][2]))
+    config.set(section_name, 'learning_rate', str(params.learning_rate))
+    config.set(section_name, 'weight_decay', str(params.weight_decay))
+    config.write(open(config_name, 'w+'))
+    return 0
 
 if __name__ == '__main__':
     main()
