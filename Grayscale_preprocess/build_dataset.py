@@ -34,10 +34,11 @@ args = parser.parse_args()
 def resize_images(filter_img, width= 128, height = 128):
 	
 	assert os.path.isdir(args.data_dir), "Couldn't find the dataset at {}".format(args.data_dir)
-	for disease in ['diabetes', 'glaucoma','healthy']:
+	for disease in ['diabetes', 'glaucoma', 'healthy']:
 		# Define the data directories
 		data_directory = os.path.join(args.data_dir, disease)
-
+		if not os.path.exists(data_directory):
+			continue
 		# Get the filenames in each directory (train and test)
 		filenames = os.listdir(data_directory)
 		filenames = [os.path.join(data_directory, f) for f in filenames if f.endswith('.jpg') or f.endswith('.tif')]
@@ -84,15 +85,16 @@ def resize_images(filter_img, width= 128, height = 128):
 	
 
 if __name__ == '__main__':
-
+	
 	image_filter = 'image_filter.png'
+	
 	filename = get_biggest_Image_Ratio(args.data_dir)
 	
 	Create_filter(filename, args.filter_dir, image_filter)
 	filter_img = Image.open(os.path.join(args.filter_dir, image_filter.split('\\')[-1]))
-	height = 128
-	hpercent = float(height/float(filter_img.size[1]))
-	width = int(float(filter_img.size[0])*float(hpercent))
+	height = 224
+	#hpercent = float(height/float(filter_img.size[1]))
+	width = 224
 	resize_images(filter_img, width = width, height = height)
 	
 	print("Done building dataset")

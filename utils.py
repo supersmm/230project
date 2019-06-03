@@ -5,6 +5,16 @@ import shutil
 
 import torch
 
+try:
+    from torch.hub import load_state_dict_from_url
+except ImportError:
+    from torch.utils.model_zoo import load_url as load_state_dict_from_url
+
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser  # ver. < 3.0
+
 class Params():
     """Class that loads hyperparameters from a json file.
 
@@ -60,7 +70,7 @@ class RunningAverage():
         return self.total/float(self.steps)
         
     
-def set_logger(log_path):
+def set_logger(log_path, level = 'info'):
     """Set the logger to log info in terminal and file `log_path`.
 
     In general, it is useful to have a logger so that every output to the terminal is saved
@@ -74,8 +84,19 @@ def set_logger(log_path):
     Args:
         log_path: (string) where to log
     """
+    level = level.lower()
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    if level == 'warning':
+        level = logging.WARNING
+    elif level == 'debug':
+        level = logging.DEBUG
+    elif level == 'error':
+        level = logging.ERROR
+    elif level == 'critical':
+        level = logging.CRITICAL
+    else:
+        level = logging.INFO
+    logger.setLevel(level)
 
     if not logger.handlers:
         # Logging to a file
