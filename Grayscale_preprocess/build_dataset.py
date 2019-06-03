@@ -37,7 +37,8 @@ def resize_images(filter_img, width= 128, height = 128):
 	for disease in ['diabetes', 'glaucoma', 'healthy', 'HDiab', 'HGlau']:
 		# Define the data directories
 		data_directory = os.path.join(args.data_dir, disease)
-
+		if not os.path.exists(data_directory):
+			continue
 		# Get the filenames in each directory (train and test)
 		filenames = os.listdir(data_directory)
 		filenames = [os.path.join(data_directory, f) for f in filenames if f.endswith('.jpg') or f.endswith('.tif')]
