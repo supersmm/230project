@@ -2,6 +2,7 @@ import os
 
 from PIL import Image
 import numpy as np
+import random
 
 def Create_filter(filename, out_dir, filter_name, is_image_filter = True):
 	im = Image.open(filename).convert('LA') # Can be many different formats.
@@ -79,13 +80,13 @@ def resize_and_save(image, output_dir, disease="diabetes", index=0, width = 128,
 
 	image = image.resize((width, height), Image.BILINEAR)
 	label= ""
-	if disease == "diabetes":
+	if disease == "diabetes" or disease == "HDiab":
 		label = "01" 
-	elif disease == "glaucoma":
+	elif disease == "glaucoma" or disease == "HGlau":
 		label = "10" 
 	else:
 		label = "00"
-	rename = "GlaucomaVSDiabetes" + str(index) + "_(" + label + ")" + ".png"
+	rename = "GlaucomaVSDiabetes" + str(index) + "_" + str(random.randint(0, 9999)) + "_(" + label + ")" + ".png"
 	image = prenorm(image)
 	image.save(os.path.join(output_dir, rename.split('\\')[-1])) # split('/') if using Mac OS
 

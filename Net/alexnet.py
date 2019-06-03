@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import sys
@@ -58,7 +59,7 @@ class Post_AlexNet(nn.Module):
     def forward(self, x):
         x = F.dropout(x)
         x = self.linear(x)
-        x = F.sigmoid(x)
+        x = torch.sigmoid(x)
         return x
 
 
