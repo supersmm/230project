@@ -86,13 +86,6 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
 
-
-    for task in range(len(params.all_tasks)):
-        print("Task: ", params.all_tasks[task])
-        confusionMatrix = functions.getConfusionMatrix(output_batch[task], labels_batch[:, task])
-        functions.printFormattedConfusionMatrix(confusionMatrix)
-        print("precision and recall:", functions.getPrecisionRecall(cmatrix, label=1))
-
     # compute mean of all metrics in summary
 
     metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) for metric in summ[taskname][0] for taskname in params.all_tasks} 

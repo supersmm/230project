@@ -64,12 +64,13 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
             summary_batch['loss'] = loss[task].data # summary_batch['loss'] = loss.data[0]
             summ[params.all_tasks[task]].append(summary_batch) # summ.append(summary_batch)
     
-    
+
     for task in range(len(params.all_tasks)):
         print("Task: ", params.all_tasks[task])
-        confusionMatrix = functions.getConfusionMatrix(output_batch[task], labels_batch[:, task])
+        confusionMatrix = functions.getConfusionMatrix(torch.as_tensor(output_batch[task]).data.cpu().numpy(), 
+            torch.as_tensor(labels_batch[:, task]).data.cpu().numpy())
         functions.printFormattedConfusionMatrix(confusionMatrix)
-        print("precision and recall:", functions.getPrecisionRecall(cmatrix, label=1))
+        print("precision and recall:", functions.getPrecisionRecall(confusionMatrix, label=1))
 
     # compute mean of all metrics in summary
     metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) 
