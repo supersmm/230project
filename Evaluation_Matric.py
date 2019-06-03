@@ -25,9 +25,9 @@ class AverageMeter(object):
     def __call__(self):
         return self.avg
 
-def accuracy(outputs, labels):
+def accuracy(outputs, labels, threshold = 0.5):
 
-    output = outputs.cpu()> 0.6
+    output = outputs.cpu()> threshold
     batchsize = len(labels)
 
     acc_diab = 0

@@ -28,7 +28,7 @@ def loadAlexnet(pretrained):
 def loadDensenet(pretrained, params):
     import Net.densenet
     print("Loading DenseNet")
-    return Net.densenet.net(params.version, pretrained), params.version
+    return Net.densenet.net(str(params.version), pretrained), str(params.version)
 
 def UnevenWeightBCE_loss(outputs, labels, weights = (2, 0.1)):
     loss_diab = torch.sum(torch.add(weights[0]*torch.mul(labels[:, 0],torch.log(outputs[:, 0])), weights[1]*torch.mul(1 - labels[:, 0],torch.log(1 - outputs[:, 0]))))

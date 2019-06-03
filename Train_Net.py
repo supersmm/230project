@@ -35,7 +35,8 @@ parser.add_argument('--network', type=str,
                     help='select network to train on. (no default, must be specified)')
 parser.add_argument('--log', default='warning', type=str,
                     help='set logging level')
-
+parser.add_argument('--threshold', default=0.5, type=float,
+                    help='the threshold of the prediction')
 
 
 
@@ -110,19 +111,19 @@ def main():
 
     train_loader = dataloaders['train']
 
-    val_loader = dataloaders['train']
+    val_loader = dataloaders['val']
 
     logging.info(model)
 
-    validate(val_loader, model, loss)
+    validate(val_loader, model, loss, threshold = args.threshold)
 
     for epoch in range(params.start_epoch, params.epochs):
 
         # train for one epoch
-        train(train_loader, model, loss, optimizer, epoch)
+        train(train_loader, model, loss, optimizer, epoch, threshold = args.threshold)
 
         # evaluate on validation set
-        val_result = validate(val_loader, model, loss)
+        val_result = validate(val_loader, model, loss, threshold = args.threshold)
 
         # remember best F1 and save checkpoint
         is_best = (2*(val_result[1][0]*val_result[2][0])/(val_result[1][0]+val_result[2][0])) > (2*(best_F1[0]*best_F1[1])/(best_F1[0]+best_F1[1]))
@@ -134,11 +135,11 @@ def main():
             'optimizer' : optimizer.state_dict(),
         }, is_best, path=json_path, filename=checkpointfile, version=version, network=args.network)
         if is_best:
-            save_to_ini(params, args.model_dir, args.network, version, val_result)
-    validate(val_loader, model, loss)
+            save_to_ini(params, args.model_dir, args.network, version, val_result, threshold = args.threshold)
+    validate(val_loader, model, loss, threshold = args.threshold)
         
 
-def train(train_loader, model, loss, optimizer, epoch):
+def train(train_loader, model, loss, optimizer, epoch, threshold = 0.5):
     logging.info("Epoch {}:".format(epoch))
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -167,7 +168,7 @@ def train(train_loader, model, loss, optimizer, epoch):
     
             # measure accuracy and record cost
             logging.info("        Measure accuracy")
-            prec, diab_pos, glau_pos = accuracy(output.data, label)
+            prec, diab_pos, glau_pos = accuracy(output.data, label, threshold = threshold)
             losses.update(cost.data, len(datas))
             for j in range(2):
                 acc[j].update(prec[j], datas.size(0))
@@ -209,7 +210,7 @@ def train(train_loader, model, loss, optimizer, epoch):
                data_time=data_time, loss=losses, acc = acc, diabF1 = diabF1, glauF1 = glauF1))
 
 
-def validate(val_loader, model, loss):
+def validate(val_loader, model, loss, threshold = 0.5):
     logging.info("Validating")
     logging.info("Initializing measurement")
     batch_time = AverageMeter()
@@ -235,7 +236,7 @@ def validate(val_loader, model, loss):
 
         # measure accuracy and record cost
         logging.info("        Measure accuracy and record cost")
-        prec, diab_pos, glau_pos = accuracy(output.data, label)
+        prec, diab_pos, glau_pos = accuracy(output.data, label, threshold = threshold)
         losses.update(cost.data, len(datas))
         for j in range(2):
             acc[j].update(prec[j], datas.size(0))
@@ -272,7 +273,7 @@ def save_checkpoint(state, is_best, path, filename, version, network):
     if is_best:
         shutil.copyfile(filename, os.path.join(path, network + version + '_model_best.pth.tar') )
 
-def save_to_ini(params, path, network, version, val_result):
+def save_to_ini(params, path, network, version, val_result, threshold):
     config = utils.ConfigParser()
     section_name = network + str(version)
     config_name = os.path.join(path, 'BestCompare.ini')
@@ -295,6 +296,7 @@ def save_to_ini(params, path, network, version, val_result):
     config.set(section_name, '        Glaucoma precision', str(val_result[2][2]))
     config.set(section_name, 'learning_rate', str(params.learning_rate))
     config.set(section_name, 'weight_decay', str(params.weight_decay))
+    config.set(section_name, 'threshold', str(threshold))
     config.write(open(config_name, 'w+'))
     return 0
 
