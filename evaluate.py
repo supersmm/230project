@@ -40,8 +40,8 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     for taskname in params.all_tasks:
         summ[taskname] = []
 
-    all_output = np.array([])
-    all_labels = np.array([])
+    all_output = [[],[]]
+    all_labels = [[],[]]
 
     # compute metrics over the dataset
     for data_batch, labels_batch in dataloader:
@@ -59,10 +59,10 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         for task in range(len(params.all_tasks)):
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             output_task = torch.as_tensor(output_batch[task]).data.cpu().numpy()
-            labels_task = torch.as_tensor(labels_batch[:, task]).data.cpu().numpy()
+            labels_task = torch.as_tensor(labels_batch[task]).data.cpu().numpy()
 
-            all_output = np.append(all_output, output_task)
-            all_labels = np.append(all_labels, labels_task)
+            all_output[task].extend(output_task.tolist())
+            all_labels[task].extend(labels_task.tolist())
 
             # compute all metrics on this batch
             summary_batch = {metric: metrics[metric](output_task, labels_task)
@@ -73,7 +73,7 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
 
     for task in range(len(params.all_tasks)):
         print("Evaluation Task: ", params.all_tasks[task])
-        confusionMatrix = functions.getConfusionMatrix(all_output[task], all_labels[:, task])
+        confusionMatrix = functions.getConfusionMatrix(all_output[task], all_labels[task])
         functions.printFormattedConfusionMatrix(confusionMatrix)
         print("precision and recall: ", ", ". join("{:05.3f}".format(x) for x in functions.getPrecisionRecall(confusionMatrix, label=1)))
 
