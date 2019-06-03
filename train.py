@@ -89,7 +89,8 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
     # compute mean of all metrics in summary
 
     metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) for metric in summ[taskname][0] for taskname in params.all_tasks} 
-    metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
+    metrics_string = "; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
+    logging.info("- Number of training examples: " + "; ".join(params.all_tasks[task]+": "+len(output_batch[task]) for task in range(len(params.all_tasks))))
     logging.info("- Train metrics: " + metrics_string)
 
 

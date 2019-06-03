@@ -6,11 +6,17 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 
+import pdb
+import torch
+import torch.utils.data
+import torchvision
+
 # borrowed from http://pytorch.org/tutorials/advanced/neural_style_tutorial.html
 # and http://pytorch.org/tutorials/beginner/data_loading_tutorial.html
 # define a training image loader that specifies transforms on images. See documentation for more details.
 def train_transformer_list(params):
     train_transformer = transforms.Compose([
+        transforms.Grayscale(num_output_channels=params.num_input_channels),
         transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
         transforms.RandomVerticalFlip(),  # randomly flip image vertically
         transforms.RandomRotation(180), # randomly rotate image by 180 degrees
@@ -25,6 +31,7 @@ def eval_transformer_list(params):
         # transforms.Resize([177, 128]),  # resize the image to 177x128 (remove if images are already 64x64)
         transforms.ToTensor()])  # transform it into a torch tensor
     return eval_transformer
+
 
 class FundusDataset(Dataset):
     """
@@ -68,7 +75,51 @@ class FundusDataset(Dataset):
         """
         image = Image.open(self.filenames[idx])  # PIL image
         image = self.transform(image)
+
         return image, self.labels[idx]
+
+
+# borrowed from https://github.com/ufoym/imbalanced-dataset-sampler/blob/master/sampler.py
+class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
+    """Samples elements randomly from a given list of indices for imbalanced dataset
+    Arguments:
+        indices (list, optional): a list of indices
+        num_samples (int, optional): number of samples to draw
+    """
+
+    def __init__(self, dataset, indices=None, num_samples=None):
+                
+        # if indices is not provided, 
+        # all elements in the dataset will be considered
+        self.indices = list(range(len(dataset))) \
+            if indices is None else indices
+            
+        self.labels = dataset.labels
+
+        # if num_samples is not provided, 
+        # draw `len(indices)` samples in each iteration
+        self.num_samples = len(self.indices) \
+            if num_samples is None else num_samples
+            
+        # distribution of classes in the dataset 
+        label_to_count = {}
+        for idx in self.indices:
+            label = self.labels
+            if label in label_to_count:
+                label_to_count[label] += 1
+            else:
+                label_to_count[label] = 1
+                
+        # weight for each sample
+        weights = [1.0 / label_to_count[self.labels[idx]] for idx in self.indices]
+        self.weights = torch.DoubleTensor(weights)
+                
+    def __iter__(self):
+        return (self.indices[i] for i in torch.multinomial(
+            self.weights, self.num_samples, replacement=True))
+
+    def __len__(self):
+        return self.num_samples 
 
 
 def fetch_dataloader(types, data_dir, params):
@@ -91,13 +142,18 @@ def fetch_dataloader(types, data_dir, params):
 
             # use the train_transformer if training data, else use eval_transformer without random flip
             if split == 'train':
-                dl = DataLoader(FundusDataset(path, train_transformer_list(params)), batch_size=params.batch_size, shuffle=True,
-                                        num_workers=params.num_workers,
-                                        pin_memory=params.cuda)
+                train_dataset = FundusDataset(path, train_transformer_list(params))
+                dl = DataLoader(train_dataset,                     
+                                    sampler=ImbalancedDatasetSampler(train_dataset),
+                                    batch_size=params.batch_size, shuffle=True,
+                                    num_workers=params.num_workers,
+                                    pin_memory=params.cuda)
             else:
-                dl = DataLoader(FundusDataset(path, eval_transformer_list(params)), batch_size=params.batch_size, shuffle=False,
-                                num_workers=params.num_workers,
-                                pin_memory=params.cuda)
+                eval_dataset = FundusDataset(path, eval_transformer_list(params))
+                dl = DataLoader(eval_dataset, 
+                                    batch_size=params.batch_size, shuffle=False,
+                                    num_workers=params.num_workers,
+                                    pin_memory=params.cuda)
 
             dataloaders[split] = dl
 

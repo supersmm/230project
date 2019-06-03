@@ -66,11 +66,11 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     
 
     for task in range(len(params.all_tasks)):
-        print("Task: ", params.all_tasks[task])
+        print("Evaluation Task: ", params.all_tasks[task])
         confusionMatrix = functions.getConfusionMatrix(torch.as_tensor(output_batch[task]).data.cpu().numpy(), 
             torch.as_tensor(labels_batch[:, task]).data.cpu().numpy())
         functions.printFormattedConfusionMatrix(confusionMatrix)
-        print("precision and recall:", functions.getPrecisionRecall(confusionMatrix, label=1))
+        print("precision and recall: ", ", ". join("{:05.3f}".format(x) for x in functions.getPrecisionRecall(confusionMatrix, label=1)))
 
     # compute mean of all metrics in summary
     metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) 
@@ -78,6 +78,7 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     # metrics_mean = {metric:np.mean([x[metric].item() for x in summ]) for metric in summ[0]} 
     # metrics_mean = {metric:np.mean([x[metric] for x in summ]) for metric in summ[0]} 
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
+    logging.info("- Number of evaluation examples: " + "; ".join(params.all_tasks[task]+": "+len(output_batch[task]) for task in range(len(params.all_tasks))))
     logging.info("- Eval metrics : " + metrics_string)
     return metrics_mean
 
