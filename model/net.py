@@ -131,7 +131,7 @@ def accuracy(outputs, labels):
 # maintain all metrics required in this dictionary- these are used in the training and evaluation loops
 metrics = {
     'accuracy': accuracy
-    , 'PrecisionRecall': functions.getPrecisionRecall
-    # , 'ConfusionMatrix': functions.getConfusionMatrix
+    , 'precision': functions.getPrecision
+    , 'recall': functions.getRecall
     # could add more metrics such as accuracy for each token type
 }

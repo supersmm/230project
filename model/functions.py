@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 import numpy as np
+import pdb
 
 
 def getConfusionMatrix(predicted, target, numClasses=2):
@@ -88,6 +89,13 @@ def getPrecisionRecall(cmatrix, label=1):
         denom = 1
     precision = trueP / denom
     return precision, recall
+
+
+def getPrecision(predicted, target, numClasses=2):
+	return getPrecisionRecall(getConfusionMatrix(predicted, target, numClasses=2))[0]
+
+def getRecall(predicted, target, numClasses=2):
+	return getPrecisionRecall(getConfusionMatrix(predicted, target, numClasses=2))[1]
 
 
 def getMacroPrecisionRecall(cmatrix):
