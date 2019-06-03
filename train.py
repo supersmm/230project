@@ -63,8 +63,8 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             output_batch = model(train_batch)
             loss = loss_fn(output_batch, labels_batch)
 
-            all_output.append(list(output_batch.data.cpu()))
-            all_labels.append(list(labels_batch.data.cpu()))
+            all_output.append(output_batch)
+            all_labels.append(labels_batch)
 
             # clear previous gradients, compute gradients of all variables wrt loss
             optimizer.zero_grad()
@@ -95,7 +95,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
 
     for task in range(len(params.all_tasks)):
         print("Training Task: ", params.all_tasks[task])
-        confusionMatrix = functions.getConfusionMatrix(np.array(all_output[task]), np.array(all_labels[:, task]))
+        confusionMatrix = functions.getConfusionMatrix(np.array(all_output[task]), np.array(all_labels)[:, task])
         functions.printFormattedConfusionMatrix(confusionMatrix)
         print("precision and recall: ", ", ". join("{:05.3f}".format(x) for x in functions.getPrecisionRecall(confusionMatrix, label=1)))
 
