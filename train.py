@@ -47,6 +47,9 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
         summ[taskname] = []
     loss_avg = utils.RunningAverage()
 
+    all_output = np.array([])
+    all_labels = np.array([])
+
     # Use tqdm for progress bar
     with tqdm(total=len(dataloader)) as t:
         for i, (train_batch, labels_batch) in enumerate(dataloader):
@@ -59,6 +62,9 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             # compute model output and loss
             output_batch = model(train_batch)
             loss = loss_fn(output_batch, labels_batch)
+
+            all_output.append(output_batch)
+            all_labels.append(labels_batch)
 
             # clear previous gradients, compute gradients of all variables wrt loss
             optimizer.zero_grad()
@@ -86,11 +92,17 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
 
+
+    for task in range(len(params.all_tasks)):
+        print("Training Task: ", params.all_tasks[task])
+        confusionMatrix = functions.getConfusionMatrix(all_output, all_labels)
+        functions.printFormattedConfusionMatrix(confusionMatrix)
+        print("precision and recall: ", ", ". join("{:05.3f}".format(x) for x in functions.getPrecisionRecall(confusionMatrix, label=1)))
+
     # compute mean of all metrics in summary
 
     metrics_mean = {"-".join([taskname, metric]):np.mean([x[metric].item() for x in summ[taskname]]) for metric in summ[taskname][0] for taskname in params.all_tasks} 
     metrics_string = "; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
-    logging.info("- Number of training examples: " + "; ".join(params.all_tasks[task]+": "+len(output_batch[task]) for task in range(len(params.all_tasks))))
     logging.info("- Train metrics: " + metrics_string)
 
 
@@ -181,7 +193,7 @@ if __name__ == '__main__':
 
     # Define the model and optimizer
     model = net.Net(params).cuda() if params.cuda else net.Net(params)
-    optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
 
     # fetch loss function and metrics
     loss_fn = net.loss_fn

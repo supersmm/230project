@@ -16,18 +16,17 @@ import torchvision
 # define a training image loader that specifies transforms on images. See documentation for more details.
 def train_transformer_list(params):
     train_transformer = transforms.Compose([
-        transforms.Grayscale(num_output_channels=params.num_input_channels),
+        transforms.Grayscale(num_output_channels=params.num_input_channels), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
         transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
         transforms.RandomVerticalFlip(),  # randomly flip image vertically
         transforms.RandomRotation(180), # randomly rotate image by 180 degrees
-        # transforms.Grayscale(num_output_channels=params.num_input_channels), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
         transforms.ToTensor()])  # transform it into a torch tensor
     return train_transformer
 
 # loader for evaluation, no horizontal flip
 def eval_transformer_list(params):
     eval_transformer = transforms.Compose([
-        # transforms.Grayscale(num_output_channels=params.num_input_channels), 
+        transforms.Grayscale(num_output_channels=params.num_input_channels), 
         # transforms.Resize([177, 128]),  # resize the image to 177x128 (remove if images are already 64x64)
         transforms.ToTensor()])  # transform it into a torch tensor
     return eval_transformer
@@ -79,7 +78,7 @@ class FundusDataset(Dataset):
         return image, self.labels[idx]
 
 
-# borrowed from https://github.com/ufoym/imbalanced-dataset-sampler/blob/master/sampler.py
+# adopted from https://github.com/ufoym/imbalanced-dataset-sampler/blob/master/sampler.py
 class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
     """Samples elements randomly from a given list of indices for imbalanced dataset
     Arguments:
@@ -104,14 +103,14 @@ class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
         # distribution of classes in the dataset 
         label_to_count = {}
         for idx in self.indices:
-            label = self.labels
+            label = str(self.labels[idx])
             if label in label_to_count:
                 label_to_count[label] += 1
             else:
                 label_to_count[label] = 1
                 
         # weight for each sample
-        weights = [1.0 / label_to_count[self.labels[idx]] for idx in self.indices]
+        weights = [1.0 / label_to_count[str(self.labels[idx])] for idx in self.indices]
         self.weights = torch.DoubleTensor(weights)
                 
     def __iter__(self):
@@ -145,7 +144,7 @@ def fetch_dataloader(types, data_dir, params):
                 train_dataset = FundusDataset(path, train_transformer_list(params))
                 dl = DataLoader(train_dataset,                     
                                     sampler=ImbalancedDatasetSampler(train_dataset),
-                                    batch_size=params.batch_size, shuffle=True,
+                                    batch_size=params.batch_size, shuffle=False, # sampler option is mutually exclusive with shuffle
                                     num_workers=params.num_workers,
                                     pin_memory=params.cuda)
             else:

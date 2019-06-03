@@ -52,8 +52,8 @@ class Net(nn.Module):
         self.dropout_rate = params.dropout_rate
 
         # 3 fully connected layers to transform the output of the convolution layers to the multi-task outputs
-        self.fc_glaucoma = nn.Linear(self.num_channels*4, 1)   
-        self.fc_diabetes = nn.Linear(self.num_channels*4, 1)   
+        self.fc_glaucoma = nn.Linear(self.num_channels*4, 2)   
+        self.fc_diabetes = nn.Linear(self.num_channels*4, 2)   
 
     def forward(self, s):
         """
