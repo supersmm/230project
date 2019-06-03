@@ -73,7 +73,7 @@ def main():
     
     model.cuda()
     # define loss function and optimizer
-    loss = model_loader.my_loss
+    loss = model_loader.UnevenWeightBCE_loss
     optimizer = torch.optim.Adam(model.parameters(), params.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=params.weight_decay, amsgrad=False)
 
     cudnn.benchmark = True
