@@ -95,7 +95,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
 
     for task in range(len(params.all_tasks)):
         print("Training Task: ", params.all_tasks[task])
-        confusionMatrix = functions.getConfusionMatrix(all_output[task], all_labels[task])
+        confusionMatrix = functions.getConfusionMatrix(all_output[task], np.array(all_labels[task]))
         functions.printFormattedConfusionMatrix(confusionMatrix)
         print("precision and recall: ", ", ". join("{:05.3f}".format(x) for x in functions.getPrecisionRecall(confusionMatrix, label=1)))
 

@@ -59,7 +59,7 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         for task in range(len(params.all_tasks)):
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             output_task = torch.as_tensor(output_batch[task]).data.cpu().numpy()
-            labels_task = torch.as_tensor(labels_batch[task]).data.cpu().numpy()
+            labels_task = torch.as_tensor(labels_batch[:, task]).data.cpu().numpy()
 
             all_output[task].extend(output_task.tolist())
             all_labels[task].extend(labels_task.tolist())
@@ -73,7 +73,7 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
 
     for task in range(len(params.all_tasks)):
         print("Evaluation Task: ", params.all_tasks[task])
-        confusionMatrix = functions.getConfusionMatrix(all_output[task], all_labels[task])
+        confusionMatrix = functions.getConfusionMatrix(all_output[task], np.array(all_labels[task]))
         functions.printFormattedConfusionMatrix(confusionMatrix)
         print("precision and recall: ", ", ". join("{:05.3f}".format(x) for x in functions.getPrecisionRecall(confusionMatrix, label=1)))
 

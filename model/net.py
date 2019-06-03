@@ -88,7 +88,7 @@ class Net(nn.Module):
         # apply log softmax on each image's output (this is recommended over applying softmax
         # since it is numerically more stable)
         outputs = [F.log_softmax(s_glaucoma, dim=1), F.log_softmax(s_diabetes, dim=1)] # return F.sigmoid(s)
-        outputs = np.argmax(outputs, axis=1)
+
         return outputs
 
 
@@ -126,7 +126,7 @@ def accuracy(outputs, labels):
 
     Returns: (float) accuracy in [0,1]
     """
-
+    outputs = np.argmax(outputs, axis=1)
     return np.sum(outputs==labels)/float(labels.size)
 
 
