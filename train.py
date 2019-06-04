@@ -71,15 +71,15 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             optimizer.step()
 
             for task in range(len(params.all_tasks)):
+                # extract data from torch Variable, move to cpu, convert to numpy arrays
+                output_task = torch.as_tensor(output_batch[task]).data.cpu().numpy()
+                labels_task = torch.as_tensor(labels_batch[:, task]).data.cpu().numpy()
+
+                all_output[task].extend(output_task.tolist())
+                all_labels[task].extend(labels_task.tolist())
+
                 # Evaluate summaries only once in a while
                 if i % params.save_summary_steps == 0:
-                    # extract data from torch Variable, move to cpu, convert to numpy arrays
-                    output_task = torch.as_tensor(output_batch[task]).data.cpu().numpy()
-                    labels_task = torch.as_tensor(labels_batch[:, task]).data.cpu().numpy()
-
-                    all_output[task].extend(output_task.tolist())
-                    all_labels[task].extend(labels_task.tolist())
-
                     # compute all metrics on this batch
                     summary_batch = {metric:metrics[metric](output_task, labels_task)
                                      for metric in metrics}

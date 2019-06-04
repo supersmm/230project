@@ -92,47 +92,18 @@ def getPrecisionRecall(cmatrix, label=1):
 
 
 def getPrecision(predicted, target, numClasses=2):
-	return getPrecisionRecall(getConfusionMatrix(predicted, target, numClasses=2))[0]
+	return getPrecisionRecall(getConfusionMatrix(predicted, target, numClasses=numClasses))[0]
 
 def getRecall(predicted, target, numClasses=2):
-	return getPrecisionRecall(getConfusionMatrix(predicted, target, numClasses=2))[1]
+	return getPrecisionRecall(getConfusionMatrix(predicted, target, numClasses=numClasses))[1]
 
 
-def getMacroPrecisionRecall(cmatrix):
-    # TP + FP
-    precisionlist = np.sum(cmatrix, axis=1)
-    # TP + FN
-    recalllist = np.sum(cmatrix, axis=0)
-    precisionlist__ = [cmatrix[i][i] / x if x !=
-                       0 else 0 for i, x in enumerate(precisionlist)]
-    recalllist__ = [cmatrix[i][i] / x if x !=
-                    0 else 0 for i, x in enumerate(recalllist)]
-    precision = np.sum(precisionlist__)
-    precision /= len(precisionlist__)
-    recall = np.sum(recalllist__)
-    recall /= len(recalllist__)
-    return precision, recall
-
-
-def getMicroPrecisionRecall(cmatrix):
-    # TP + FP
-    precisionlist = np.sum(cmatrix, axis=1)
-    # TP + FN
-    recalllist = np.sum(cmatrix, axis=0)
-    num = 0.0
-    for i in range(len(cmatrix)):
-        num += cmatrix[i][i]
-
-    precision = num / np.sum(precisionlist)
-    recall = num / np.sum(recalllist)
-    return precision, recall
-
-
-def getMacroMicroFScore(cmatrix):
+def getMacroFScore(predicted, target, numClasses=2):
     '''
     Returns macro and micro f-scores.
     Refer: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.104.8244&rep=rep1&type=pdf
     '''
+    cmatrix = getConfusionMatrix(predicted, target, numClasses=numClasses)
     precisionlist = np.sum(cmatrix, axis=1)
     recalllist = np.sum(cmatrix, axis=0)
     precisionlist__ = [cmatrix[i][i] / x if x !=
@@ -148,16 +119,4 @@ def getMacroMicroFScore(cmatrix):
         macro += numer / denom
     macro /= len(precisionlist)
 
-    num = 0.0
-    for i in range(len(precisionlist)):
-        num += cmatrix[i][i]
-
-    denom1 = np.sum(precisionlist)
-    denom2 = np.sum(recalllist)
-    pi = num / denom1
-    rho = num / denom2
-    denom = pi + rho
-    if denom == 0:
-        denom = 1
-    micro = 2 * pi * rho / denom
-    return macro, micro
+    return macro

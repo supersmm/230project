@@ -135,5 +135,6 @@ metrics = {
     'accuracy': accuracy
     , 'precision': functions.getPrecision
     , 'recall': functions.getRecall
+    , 'f1score': functions.getMacroFScore
     # could add more metrics such as accuracy for each token type
 }
