@@ -34,14 +34,12 @@ def UnevenWeightBCE_loss(outputs, labels, weights = (1, 1)):
     '''
     Cross entropy loss with uneven weigth between positive and negative result to manually adjust precision and recall
     '''
-    loss_diab = torch.sum(torch.add(weights[0]*torch.mul(labels[:, 0],torch.log(outputs[:, 0])), weights[1]*torch.mul(1 - labels[:, 0],torch.log(1 - outputs[:, 0]))))
-    loss_glau = torch.sum(torch.add(weights[0]*torch.mul(labels[:, 1],torch.log(outputs[:, 1])), weights[1]*torch.mul(1 - labels[:, 1],torch.log(1 - outputs[:, 1]))))
-    return -torch.add(loss_diab, loss_glau)
+    loss = [torch.sum(torch.add(weights[0]*torch.mul(labels[:, i],torch.log(outputs[:, i])), weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i])))) for i in range(outputs.shape[1])]
+    return -torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
 
 def Exp_UEW_BCE_loss(outputs, labels, weights = (1, 1)):
     '''
     Cross entropy loss with uneven weigth between positive and negative result, add exponential function to positive to manually adjust precision and recall
     '''
-    loss_diab = torch.sum(torch.add(weights[0]*torch.exp(torch.mul(labels[:, 0],torch.log(outputs[:, 0])))-1, weights[1]*torch.mul(1 - labels[:, 0],torch.log(1 - outputs[:, 0]))))
-    loss_glau = torch.sum(torch.add(weights[0]*torch.exp(torch.mul(labels[:, 1],torch.log(outputs[:, 1])))-1, weights[1]*torch.mul(1 - labels[:, 1],torch.log(1 - outputs[:, 1]))))
-    return -torch.add(loss_diab, loss_glau)
+    loss = [torch.sum(torch.add(weights[0]*torch.exp(torch.mul(labels[:, i],torch.log(outputs[:, i])))-1, weights[1]*torch.mul(1 - labels[:, i],torch.log(1 - outputs[:, i])))) for i in range(outputs.shape[1])]
+    return -torch.stack(loss, dim=0).sum(dim=0).sum(dim=0)
