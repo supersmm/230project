@@ -8,22 +8,17 @@ import torchvision.transforms as transforms
 # borrowed from http://pytorch.org/tutorials/advanced/neural_style_tutorial.html
 # and http://pytorch.org/tutorials/beginner/data_loading_tutorial.html
 # define a training image loader that specifies transforms on images. See documentation for more details.
-def train_transformer_list(params):
-    train_transformer = transforms.Compose([
+def transformer_list(params):
+    Rare_transformer = transforms.Compose([
         transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
         transforms.RandomVerticalFlip(),  # randomly flip image vertically
         transforms.RandomRotation(180), # randomly rotate image by 180 degrees
         transforms.Grayscale(num_output_channels=params.num_input_channels), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
         transforms.ToTensor()])  # transform it into a torch tensor
-    return train_transformer
-
-# loader for evaluation, no horizontal flip
-def eval_transformer_list(params):
-    eval_transformer = transforms.Compose([
-        transforms.Grayscale(num_output_channels=params.num_input_channels), 
-        # transforms.Resize([177, 128]),  # resize the image to 177x128 (remove if images are already 64x64)
+    Major_transformer = transforms.Compose([
+        transforms.Grayscale(num_output_channels=params.num_input_channels), # convert RGB image to greyscale (optional, 1 vs. 3 channels)
         transforms.ToTensor()])  # transform it into a torch tensor
-    return eval_transformer
+    return Rare_transformer, Major_transformer
 
 class FundusDataset(Dataset):
     """
@@ -40,7 +35,6 @@ class FundusDataset(Dataset):
         self.filenames = os.listdir(data_dir)
         self.filenames = [os.path.join(data_dir, f) for f in self.filenames if f.endswith('.png')]
 
-        # self.labels = [int(os.path.split(filename)[-1][0]) for filename in self.filenames]
         self.labels = []
         for filename in self.filenames:
             imagename = os.path.split(filename)[-1]
@@ -66,7 +60,10 @@ class FundusDataset(Dataset):
             label: (int) corresponding label of image
         """
         image = Image.open(self.filenames[idx])  # PIL image
-        image = self.transform(image)
+        if self.labels[idx].any() != 0.:
+            image = self.transform[0](image)
+        else:
+            image = self.transform[1](image)
         return image, self.labels[idx], self.filenames[idx]
 
 
@@ -90,11 +87,11 @@ def fetch_dataloader(types, data_dir, params):
 
             # use the train_transformer if training data, else use eval_transformer without random flip
             if split == 'train':
-                dl = DataLoader(FundusDataset(path, train_transformer_list(params)), batch_size=params.batch_size, shuffle=True,
+                dl = DataLoader(FundusDataset(path, transformer_list(params)), batch_size=params.batch_size, shuffle=True,
                                         num_workers=params.num_workers,
                                         pin_memory=params.cuda)
             else:
-                dl = DataLoader(FundusDataset(path, eval_transformer_list(params)), batch_size=params.batch_size, shuffle=False,
+                dl = DataLoader(FundusDataset(path, transformer_list(params)), batch_size=params.batch_size, shuffle=False,
                                 num_workers=params.num_workers,
                                 pin_memory=params.cuda)
 

@@ -54,11 +54,19 @@ class AlexNet(nn.Module):
 class Post_AlexNet(nn.Module):
     def __init__(self, AlexnetClass = 1000, num_classes = 2):
         super(Post_AlexNet, self).__init__()
-        self.linear = nn.Linear(AlexnetClass, num_classes)
-        
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(AlexnetClass, 50),
+            nn.BatchNorm1d(50),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(50, 50),
+            nn.BatchNorm1d(50),
+            nn.ReLU(inplace=True),
+            nn.Linear(50, num_classes),
+        )
     def forward(self, x):
-        x = F.dropout(x)
-        x = self.linear(x)
+        x = self.classifier(x)
         x = torch.sigmoid(x)
         return x
 
