@@ -74,7 +74,7 @@ def main():
     
     model.cuda()
     # define loss function and optimizer
-    loss = model_loader.UnevenWeightBCE_loss
+    loss = model_loader.Exp_UEW_BCE_loss
     optimizer = torch.optim.Adam(model.parameters(), params.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=params.weight_decay, amsgrad=False)
 
     cudnn.benchmark = True
@@ -164,7 +164,7 @@ def train(train_loader, model, loss, optimizer, epoch, threshold = 0.5):
             # compute output
             logging.info("        Compute output")
             output = model(input_var).double()
-            cost = loss(output, label_var)
+            cost = loss(output, label_var, (1, 0.3))
     
             # measure accuracy and record cost
             logging.info("        Measure accuracy")
@@ -232,7 +232,7 @@ def validate(val_loader, model, loss, threshold = 0.5):
         # compute output
         logging.info("        Compute output")
         output = model(input_var).double()
-        cost = loss(output, label_var)
+        cost = loss(output, label_var, (1, 0.3))
 
         # measure accuracy and record cost
         logging.info("        Measure accuracy and record cost")
