@@ -8,5 +8,7 @@
     "num_input_channels": 1,
     "save_summary_steps": 100,
     "num_workers": 4,
+    "input_width": 224,
+    "input_height": 224,
     "all_tasks": ["Glaucoma", "Diabetes"]
 }
