@@ -35,6 +35,8 @@ class Net(nn.Module):
         """
         super(Net, self).__init__()
         self.num_channels = params.num_channels
+        self.input_width = params.input_width
+        self.input_height = params.input_height
         
         # each of the convolution layers below have the arguments (input_channels, output_channels, filter_size,
         # stride, padding). We also include batch normalisation layers that help stabilise training.
@@ -47,7 +49,7 @@ class Net(nn.Module):
         self.bn3 = nn.BatchNorm2d(self.num_channels*4)
 
         # 2 fully connected layers to transform the output of the convolution layers
-        self.fc1 = nn.Linear(int(params.input_width*params.input_height/64)*self.num_channels*4, self.num_channels*4)
+        self.fc1 = nn.Linear(int(self.input_width*self.input_height/64)*self.num_channels*4, self.num_channels*4)
         self.fcbn1 = nn.BatchNorm1d(self.num_channels*4)    
         self.dropout_rate = params.dropout_rate
 
@@ -77,7 +79,7 @@ class Net(nn.Module):
         s = F.relu(F.max_pool2d(s, 2))                      # batch_size x num_channels*4 x 22 x 16
 
         # flatten the output for each image
-        s = s.view(-1, int(params.input_width*params.input_height/64)*self.num_channels*4)           # batch_size x 22*16*self.num_channels*4
+        s = s.view(-1, int(self.input_width*self.input_height/64)*self.num_channels*4)           # batch_size x 22*16*self.num_channels*4
 
         # apply 2 fully connected layers with dropout
         s = F.dropout(F.relu(self.fcbn1(self.fc1(s))), 
