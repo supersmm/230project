@@ -113,7 +113,7 @@ def main():
 
     val_loader = dataloaders['val']
 
-    logging.info(model)
+    logging.warning(model)
 
     validate(val_loader, model, loss, threshold = args.threshold)
 
