@@ -50,8 +50,8 @@ def resize_images(filter_img, width= 128, height = 128):
 		random.shuffle(filenames)
 
 		num_images = len(filenames)
-		split1 = int(0.8 * num_images)
-		split2 = int(0.9 * num_images)
+		split1 = int(0.6 * num_images)
+		split2 = int(0.8 * num_images)
 		train_filenames = filenames[:split1]
 		val_filenames = filenames[split1:split2]
 		test_filenames = filenames[split2:]
@@ -87,10 +87,10 @@ def resize_images(filter_img, width= 128, height = 128):
 if __name__ == '__main__':
 	
 	image_filter = 'image_filter.png'
-	
+	'''
 	filename = get_biggest_Image_Ratio(args.data_dir)
 	
-	Create_filter(filename, args.filter_dir, image_filter)
+	Create_filter(filename, args.filter_dir, image_filter)'''
 	filter_img = Image.open(os.path.join(args.filter_dir, image_filter.split('\\')[-1]))
 	height = 224
 	#hpercent = float(height/float(filter_img.size[1]))

@@ -164,7 +164,7 @@ def train(train_loader, model, loss, optimizer, epoch, threshold = 0.5):
             # compute output
             logging.info("        Compute output")
             output = model(input_var).double()
-            cost = loss(output, label_var, (1, 0.3))
+            cost = loss(output, label_var, (1, 1))
     
             # measure accuracy and record cost
             logging.info("        Measure accuracy")
@@ -232,7 +232,7 @@ def validate(val_loader, model, loss, threshold = 0.5):
         # compute output
         logging.info("        Compute output")
         output = model(input_var).double()
-        cost = loss(output, label_var, (1, 0.3))
+        cost = loss(output, label_var, (1, 1))
 
         # measure accuracy and record cost
         logging.info("        Measure accuracy and record cost")
