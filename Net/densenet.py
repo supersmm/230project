@@ -198,11 +198,11 @@ def densenet201(pretrained=False, progress=True, **kwargs):
                      **kwargs)
     
 class Post_DenseNet(nn.Module):
-    def __init__(self, AlexnetClass = 1000, num_classes = 2):
+    def __init__(self, DensenetClass = 1000, num_classes = 2):
         super(Post_DenseNet, self).__init__()
         self.classifier = nn.Sequential(
             nn.Dropout(),
-            nn.Linear(AlexnetClass, 50),
+            nn.Linear(DensenetClass, 50),
             nn.BatchNorm1d(50),
             nn.ReLU(inplace=True),
             nn.Dropout(),
