@@ -73,6 +73,10 @@ For every new experiment, we create a new directory under `experiments` with a s
 ```
 python train.py --data_dir data/ResizedData --model_dir experiments/base_model
 ```
+or
+```
+python Train_Net.py --data_dir data/ResizedData --network (networkname)
+```
 It will instantiate a model and train it on the training set following the hyperparameters specified in `params.json`. It will also evaluate some metrics on the validation set.
 
 4. __Hyperparameters search__ There is a new directory `learning_rate` in `experiments`. Now, run
